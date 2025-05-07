@@ -1,0 +1,148 @@
+CREATE TABLE User (
+    User_ID INT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    date_of_birth DATE,
+    contact_number VARCHAR(20),
+    email VARCHAR(100),
+    gender VARCHAR(10),
+    address TEXT,
+    account_status VARCHAR(20)
+);
+
+CREATE TABLE LoginCredentials (
+    User_ID INT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE,
+    password VARCHAR(100),
+    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+);
+
+CREATE TABLE Student (
+    User_ID INT PRIMARY KEY,
+    program VARCHAR(100),
+    faculty VARCHAR(100),
+    enrollment_date DATE,
+    CGPA DECIMAL(3,2),
+    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+);
+
+CREATE TABLE Librarian (
+    User_ID INT PRIMARY KEY,
+    shift_starting_time TIME,
+    shift_ending_time TIME,
+    shift_branch VARCHAR(100),
+    shift_task TEXT,
+    FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
+);
+
+
+CREATE TABLE Lecturer (
+    User_ID INT PRIMARY KEY,
+    department VARCHAR(100),
+    specialization VARCHAR(100),
+    office_hour VARCHAR(50),
+    office_location VARCHAR(100),
+    FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
+);
+
+CREATE TABLE AgeSuggestion (
+    AgeSuggestion_ID INT PRIMARY KEY,
+    rating_label VARCHAR(50),
+    min_age INT,
+    description TEXT
+);
+
+CREATE TABLE Genre (
+    Genre_ID INT PRIMARY KEY,
+    genre_name VARCHAR(100),
+    genre_description TEXT
+);
+
+CREATE TABLE Tag (
+    Tag_ID INT PRIMARY KEY,
+    tag_name VARCHAR(50),
+    fine_rate DECIMAL(5,2),
+    loan_period INT,
+    loanable_status VARCHAR(10) CHECK (loanable_status IN ('yes', 'no'))
+);
+
+CREATE TABLE Book (
+    ISBN VARCHAR(20) PRIMARY KEY,
+    book_title VARCHAR(255),
+    Genre_ID INT,
+    AgeSuggestion_ID INT,
+    Tag_ID INT,
+    FOREIGN KEY (Genre_ID) REFERENCES Genre(Genre_ID),
+    FOREIGN KEY (AgeSuggestion_ID) REFERENCES AgeSuggestion(AgeSuggestion_ID),
+    FOREIGN KEY (Tag_ID) REFERENCES Tag(Tag_ID)
+);
+
+CREATE TABLE BookDescription (
+    ISBN VARCHAR(20) PRIMARY KEY,
+    description TEXT,
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+);
+
+CREATE TABLE Author (
+    Author_ID INT PRIMARY KEY,
+    author_name VARCHAR(100)
+);
+
+CREATE TABLE BookAuthor (
+    ISBN VARCHAR(20),
+    Author_ID INT,
+    PRIMARY KEY (ISBN, Author_ID),
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN),
+    FOREIGN KEY (Author_ID) REFERENCES Author(Author_ID)
+);
+
+CREATE TABLE BookCopy (
+    BookCopy_ID INT PRIMARY KEY,
+    ISBN VARCHAR(20),
+    availability_status VARCHAR(10) CHECK (availability_status IN ('available', 'loaned')),
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+);
+
+CREATE TABLE Loan (
+    Loan_ID INT PRIMARY KEY,
+    BookCopy_ID INT,
+    User_ID INT,
+    loan_fine_amount DECIMAL(6,2),
+    loan_created_date DATE,
+    return_date DATE,
+    FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
+    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+);
+
+CREATE TABLE Reservation (
+    Reservation_ID INT PRIMARY KEY,
+    BookCopy_ID INT,
+    User_ID INT,
+    reservation_created_date DATE,
+    expiry_date DATE,
+    FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
+    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+);
+
+CREATE TABLE Room (
+    Room_ID INT PRIMARY KEY,
+    room_name VARCHAR(100)
+);
+
+CREATE TABLE RoomDetails (
+    Room_ID INT PRIMARY KEY,
+    room_capacity INT,
+    room_floor INT,
+    maintenance_status VARCHAR(10) CHECK (maintenance_status IN ('available', 'unavailable')),
+    FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
+);
+
+CREATE TABLE RoomBooking (
+    RoomBooking_ID INT PRIMARY KEY,
+    Room_ID INT,
+    User_ID INT,
+    room_booking_created_time DATETIME,
+    end_time DATETIME,
+    FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID),
+    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+);
