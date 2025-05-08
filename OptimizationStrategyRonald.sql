@@ -11,8 +11,8 @@ SELECT
      WHERE ISBN = bc.ISBN) AS book_title,
     a.author_name
 FROM 
-    Book_Copy bc,
-    Book_Author ba,
+    BookCopy bc,
+    BookAuthor ba,
     Author a
 WHERE 
     bc.BookCopy_ID = 'BC001'
@@ -32,9 +32,9 @@ SELECT
     bc.BookCopy_ID,
     b.book_title,
     a.author_name
-FROM Book_Copy bc 
+FROM BookCopy bc 
 JOIN Book b ON bc.ISBN = b.ISBN
-JOIN Book_Author ba ON b.ISBN = ba.ISBN
+JOIN BookAuthor ba ON b.ISBN = ba.ISBN
 JOIN Author a ON ba.Author_ID = a.Author_ID
 WHERE bc.BookCopy_ID = 'BC001';
 
