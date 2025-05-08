@@ -1,9 +1,112 @@
 USE RKB_Library;
+-------------------------------------------------------------------------------------------------------------
+--                             _   _                    ____         _                                     --
+--                            | | | | ___   ___  _ __  |  _ \  ___  | |  ___                               --
+--                            | | | |/ __| / _ \| '__| | |_) |/ _ \ | | / _ \                              --
+--                            | |_| |\__ \|  __/| |    |  _ <| (_) || ||  __/                              --
+--                             \___/ |___/ \___||_|    |_| \_\\___/ |_| \___|                              --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+-- User Access Roles (Librarian) 
+CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
 
---------------------------------------------------------------------------
---                             Create Table                             --
---------------------------------------------------------------------------
-/*======================================================================*/
+USE RKB_Library
+
+CREATE USER librarian FOR LOGIN Lib; -- Create User within that "Lib" Server
+ 
+-- Access 1: For handling book loans (issue, return, fine)
+GRANT SELECT, INSERT, UPDATE ON Loan TO librarian;  
+
+-- Access 2: For monitoring and updating reservations
+GRANT SELECT, UPDATE ON Reservation TO librarian; 
+
+-- Access 3: For changing real-time book status (available, loaned, etc.)
+GRANT SELECT, UPDATE ON BookCopy TO librarian;
+
+-- Access 4: Allow librarians to read and modify tag
+GRANT SELECT, UPDATE ON Tag TO librarian;
+
+-- For explaining inquiries related to Book
+GRANT SELECT ON Book to librarian; 
+GRANT SELECT ON BookDescription TO librarian;
+GRANT SELECT ON Author TO librarian;
+GRANT SELECT ON Genre TO librarian;
+
+/*=========================================================================================================*/
+-- User Access (Student)
+CREATE LOGIN Stud WITH PASSWORD = '1'; -- Create Login to Sql Server
+
+USE RKB_Library
+
+CREATE USER student FOR LOGIN Stud; -- Create User within that "Stud" Server
+
+-- Access 1: For Student to Search what is the book about
+GRANT SELECT ON Book TO student;
+GRANT SELECT ON BookDescription TO student;
+GRANT SELECT ON Author TO student;
+GRANT SELECT ON Genre TO student;
+
+-- Access 2: For Student to Check Book Availability
+GRANT SELECT ON BookCopy TO student;
+
+-- Access 3: Reserve Books 
+GRANT SELECT, INSERT ON Reservation TO student;
+
+-- Access 4: Student View Own loans
+GRANT SELECT ON Loan TO student;
+
+-- Access 5: For Student to Book Presentation Room
+GRANT SELECT, INSERT ON RoomBooking TO student;
+
+-- Access 6: View room details
+GRANT SELECT ON Room TO student;
+GRANT SELECT ON RoomDetails TO student;
+
+/*=========================================================================================================*/
+-- User Access (Lecturer)
+CREATE LOGIN Lect WITH PASSWORD = '1';
+
+USE RKB_Library;
+
+CREATE USER lecturer FOR LOGIN Lect; -- DB user name = 'lecturer'
+
+-- Access 1: Lecturer can browse books, view genres, authors, and descriptions
+GRANT SELECT ON Book TO lecturer;
+GRANT SELECT ON BookDescription TO lecturer;
+GRANT SELECT ON Author TO lecturer;
+GRANT SELECT ON Genre TO lecturer;
+
+-- Access 2: View copy availability (available, loaned, reserved, etc.)
+GRANT SELECT ON BookCopy TO lecturer;
+
+-- Access 3: View Tag details (so they can know which books are reference/non-loanable)
+GRANT SELECT ON Tag TO lecturer;
+
+-- Reservations
+GRANT SELECT, INSERT ON Reservation TO lecturer;
+
+-- View own loan history
+GRANT SELECT ON Loan TO lecturer;
+
+-- Room booking
+GRANT SELECT, INSERT ON RoomBooking TO lecturer;
+GRANT SELECT ON Room TO lecturer;
+GRANT SELECT ON RoomDetails TO lecturer;
+
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
+ --   ____          _          _                            ____                    _    _                 --
+ --  |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __    --
+ --  | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \   --
+ --  | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |  --
+ --  |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|  --
+ --                                                                                                        --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
 CREATE TABLE [User] (
     User_ID VARCHAR(10) PRIMARY KEY,
     first_name VARCHAR(50),
@@ -15,7 +118,7 @@ CREATE TABLE [User] (
     address VARCHAR(255),
     account_status VARCHAR(20) CHECK (account_status IN ('active', 'suspended', 'terminated')) -- For Achieving Enum Status
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE LoginCredentials (
     User_ID VARCHAR(10) PRIMARY KEY,
@@ -23,7 +126,7 @@ CREATE TABLE LoginCredentials (
     password VARCHAR(100),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Student (
     User_ID VARCHAR(10) PRIMARY KEY,
@@ -33,7 +136,7 @@ CREATE TABLE Student (
     CGPA DECIMAL(3,2) CHECK (CGPA >= 0 AND CGPA <= 4), -- Check Between 0 and 4 and conditional 3 digits max & 2 decimals max
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Staff (
     User_ID VARCHAR(10) PRIMARY KEY,
@@ -41,7 +144,7 @@ CREATE TABLE Staff (
     salary DECIMAL(10,2) CHECK (salary >= 0), 
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Librarian (
     User_ID VARCHAR(10) PRIMARY KEY,
@@ -51,7 +154,7 @@ CREATE TABLE Librarian (
     shift_task TEXT, -- description based use Text just in case too long
     FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Lecturer (
     User_ID VARCHAR(10) PRIMARY KEY,
@@ -61,7 +164,7 @@ CREATE TABLE Lecturer (
     office_location VARCHAR(100),
     FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE AgeSuggestion (
     AgeSuggestion_ID VARCHAR(10) PRIMARY KEY,
@@ -69,14 +172,14 @@ CREATE TABLE AgeSuggestion (
     min_age INT,
     description TEXT -- description based use Text just in case too long
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Genre (
     Genre_ID VARCHAR(10) PRIMARY KEY,
     genre_name VARCHAR(100),
     genre_description TEXT -- description based use Text just in case too long
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Tag (
     Tag_ID VARCHAR(10) PRIMARY KEY,
@@ -85,7 +188,7 @@ CREATE TABLE Tag (
     loan_period INT,
     loanable_status VARCHAR(20) CHECK (loanable_status IN ('loanable', 'non loanable'))
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Book (
     ISBN VARCHAR(20) PRIMARY KEY,
@@ -97,20 +200,20 @@ CREATE TABLE Book (
     FOREIGN KEY (AgeSuggestion_ID) REFERENCES AgeSuggestion(AgeSuggestion_ID),
     FOREIGN KEY (Tag_ID) REFERENCES Tag(Tag_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE BookDescription (
     ISBN VARCHAR(20) PRIMARY KEY,
     description TEXT,
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Author (
     Author_ID VARCHAR(10) PRIMARY KEY,
     author_name VARCHAR(100)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE BookAuthor (
     ISBN VARCHAR(20),
@@ -119,7 +222,7 @@ CREATE TABLE BookAuthor (
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN),
     FOREIGN KEY (Author_ID) REFERENCES Author(Author_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE BookCopy (
     BookCopy_ID VARCHAR(10) PRIMARY KEY,
@@ -127,7 +230,7 @@ CREATE TABLE BookCopy (
     availability_status VARCHAR(20) CHECK (availability_status IN ('Available', 'Loaned', 'Reserved')), -- Store Reservation & Loan Status
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Loan (
     Loan_ID VARCHAR(10) PRIMARY KEY,
@@ -139,7 +242,7 @@ CREATE TABLE Loan (
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Reservation (
     Reservation_ID VARCHAR(10) PRIMARY KEY,
@@ -150,13 +253,13 @@ CREATE TABLE Reservation (
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE Room (
     Room_ID VARCHAR(10) PRIMARY KEY,
     room_name VARCHAR(100)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE RoomDetails (
     Room_ID VARCHAR(10) PRIMARY KEY,
@@ -165,7 +268,7 @@ CREATE TABLE RoomDetails (
     maintenance_status VARCHAR(20) CHECK (maintenance_status IN ('available', 'under maintenance', 'closed')),
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 CREATE TABLE RoomBooking (
     RoomBooking_ID VARCHAR(10) PRIMARY KEY,
@@ -176,39 +279,233 @@ CREATE TABLE RoomBooking (
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
-/*======================================================================*/
+/*=========================================================================================================*/
 
 
 
---------------------------------------------------------------------------
---                               Trigger                                --
---------------------------------------------------------------------------
-/*======================================================================*/
--- Enforce Max Loan Limit <10 --
-CREATE TRIGGER TRG_Loan_INS_MaxLoanLimit
+-------------------------------------------------------------------------------------------------------------
+--       ____   _                         _     ____                              _                        --
+--      / ___| | |_  ___   _ __  ___   __| |   |  _ \  _ __  ___    ___  ___   __| | _   _  _ __  ___      --
+--      \___ \ | __|/ _ \ | '__|/ _ \ / _` |   | |_) || '__|/ _ \  / __|/ _ \ / _` || | | || '__|/ _ \     --
+--       ___) || |_| (_) || |  |  __/| (_| |   |  __/ | |  | (_) || (__|  __/| (_| || |_| || |  |  __/     --
+--      |____/  \__|\___/ |_|   \___| \__,_|   |_|    |_|   \___/  \___|\___| \__,_| \__,_||_|   \___|     --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+-- SP1 -- Invoke Trigger 1
+GO
+CREATE PROCEDURE SP_Loan_Book
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check if user has 10 or more active loans (no return_date yet)
+    IF (
+        SELECT COUNT(*) 
+        FROM Loan 
+        WHERE User_ID = @User_ID AND return_date IS NULL
+    ) >= 10
+    BEGIN
+        RAISERROR('User already has 10 active loans.', 16, 1);
+        RETURN;
+    END
+
+    -- Check if book copy is available
+    IF (
+        SELECT availability_status 
+        FROM BookCopy 
+        WHERE BookCopy_ID = @BookCopy_ID
+    ) != 'available' 
+    BEGIN
+        RAISERROR('Book copy is not available.', 16, 1);
+        RETURN;
+    END
+
+    -- Check if the book is loanable via its Tag
+    IF EXISTS (
+        SELECT 1
+        FROM Book b
+        JOIN Tag t ON b.Tag_ID = t.Tag_ID
+        JOIN BookCopy bc ON b.ISBN = bc.ISBN
+        WHERE bc.BookCopy_ID = @BookCopy_ID AND t.loanable_status != 'loanable'
+    )
+    BEGIN
+        RAISERROR('Book is not loanable.', 16, 1);
+        RETURN;
+    END
+
+    -- All checks passed: insert into Loan
+    INSERT INTO Loan (BookCopy_ID, User_ID, loan_fine_amount, loan_created_date)
+    VALUES (@BookCopy_ID, @User_ID, 0, GETDATE());
+
+    -- Update the book copy's availability to 'unavailable'
+    UPDATE BookCopy
+    SET availability_status = 'loaned'
+    WHERE BookCopy_ID = @BookCopy_ID;
+END;
+GO
+/*=========================================================================================================*/
+
+-- SP2 -- Invoke Trigger 2
+
+GO
+CREATE PROCEDURE SP_Return_Book
+    @Loan_ID INT,
+    @return_date DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @BookCopy_ID VARCHAR(10);
+    DECLARE @loan_created_date DATE;
+    DECLARE @ISBN VARCHAR(20);
+    DECLARE @Tag_ID VARCHAR(10);
+    DECLARE @loan_period INT;
+    DECLARE @fine_rate DECIMAL(10, 2);
+    DECLARE @overdue_days INT;
+    DECLARE @fine_amount DECIMAL(10, 2);
+
+    -- Get loan details
+    SELECT 
+        @BookCopy_ID = BookCopy_ID,
+        @loan_created_date = loan_created_date
+    FROM Loan
+    WHERE Loan_ID = @Loan_ID;
+
+    -- Get ISBN from BookCopy
+    SELECT @ISBN = ISBN
+    FROM BookCopy
+    WHERE BookCopy_ID = @BookCopy_ID;
+
+    -- Get Tag_ID from Book
+    SELECT @Tag_ID = Tag_ID
+    FROM Book
+    WHERE ISBN = @ISBN;
+
+    -- Get loan_period and fine_rate from Tag
+    SELECT 
+        @loan_period = loan_period,
+        @fine_rate = fine_rate
+    FROM Tag
+    WHERE Tag_ID = @Tag_ID;
+
+    -- Calculate overdue days
+    SET @overdue_days = DATEDIFF(DAY, @loan_created_date, @return_date) - @loan_period;
+    IF @overdue_days < 0
+        SET @overdue_days = 0;
+
+    -- Calculate fine
+    SET @fine_amount = @overdue_days * @fine_rate;
+
+    -- Update Loan with return_date and fine
+    UPDATE Loan
+    SET 
+        return_date = @return_date,
+        loan_fine_amount = @fine_amount
+    WHERE Loan_ID = @Loan_ID;
+END;
+GO
+/*=========================================================================================================*/
+
+-- SP3 -- Invoke Trigger 3
+CREATE PROCEDURE SP_Reserve_Book
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10),
+    @reservation_created_date DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @loan_created_date DATE;
+    DECLARE @expiry_date DATE;
+
+    -- Check if book copy is currently unavailable (i.e., loaned out)
+    IF (
+        SELECT availability_status
+        FROM BookCopy
+        WHERE BookCopy_ID = @BookCopy_ID
+    ) != 'Loaned'
+    BEGIN
+        RAISERROR('Book copy is not currently loaned out and cannot be reserved.', 16, 1);
+        RETURN;
+    END
+
+    -- Get loan_created_date for the active loan of this book copy
+    SELECT TOP 1 @loan_created_date = loan_created_date
+    FROM Loan
+    WHERE BookCopy_ID = @BookCopy_ID AND return_date IS NULL;
+
+    -- If loan not found (shouldn't happen, but for safety)
+    IF @loan_created_date IS NULL
+    BEGIN
+        RAISERROR('No active loan found for this book copy.', 16, 1);
+        RETURN;
+    END
+
+    -- Insert reservation record
+    INSERT INTO Reservation (BookCopy_ID, User_ID, reservation_created_date, expiry_date)
+    VALUES (@BookCopy_ID, @User_ID, @reservation_created_date, @expiry_date);
+
+    -- Update book copy status to reserved
+    UPDATE BookCopy
+    SET availability_status = 'reserved'
+    WHERE BookCopy_ID = @BookCopy_ID;
+END;
+/*=========================================================================================================*/
+
+
+-------------------------------------------------------------------------------------------------------------
+--                                  _____       _                                                          --
+--                                 |_   _|_ __ (_)  __ _   __ _   ___  _ __                                --
+--                                   | | | '__|| | / _` | / _` | / _ \| '__|                               --
+--                                   | | | |   | || (_| || (_| ||  __/| |                                  --
+--                                   |_| |_|   |_| \__, | \__, | \___||_|                                  --
+--                                                 |___/  |___/                                            --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+-- Invoke after SP1
+GO
+CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
 ON Loan
 AFTER INSERT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Check if any user exceeds 10 active loans
-    IF EXISTS (
-        SELECT i.user_id
-        FROM inserted i
-        JOIN Loan l ON i.user_id = l.user_id
-        WHERE l.return_date IS NULL
-        GROUP BY i.user_id
-        HAVING COUNT(*) > 10
-    )
-    BEGIN
-        RAISERROR ('User has exceeded the maximum allowed number of active loans (10).', 16, 1);
-        ROLLBACK TRANSACTION;
-    END
+    -- Update BookCopy availability to 'Loaned' after loan is inserted
+    UPDATE bc
+    SET bc.availability_status = 'loaned'
+    FROM BookCopy bc
+    JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
 END;
-/*======================================================================*/
+GO
+/*=========================================================================================================*/
 
--- Automatically set expiry after 3 days --
+-- Invoke after SP2
+GO
+CREATE TRIGGER TRG_Loan_UPD_SetCopyToAvailable
+ON Loan
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update BookCopy to 'Available' when return_date is set
+    UPDATE bc
+    SET bc.availability_status = 'available'
+    FROM BookCopy bc
+    JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
+    JOIN deleted d ON i.loan_id = d.loan_id
+    WHERE i.return_date IS NOT NULL AND d.return_date IS NULL;
+END;
+GO
+/*=========================================================================================================*/
+
+-- Invoke after SP3
+GO
 CREATE TRIGGER TRG_Reservation_INS_SetExpiryDate
 ON Reservation
 AFTER INSERT
@@ -222,219 +519,35 @@ BEGIN
     FROM Reservation r
     JOIN inserted i ON r.reservation_id = i.reservation_id;
 END;
-/*======================================================================*/
-
--- Auto expire outdated reservations --
-CREATE TRIGGER TRG_Reservation_UPD_ExpireStatus
-ON Reservation
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Set related BookCopy to 'Available' if reservation has expired
-    UPDATE bc
-    SET bc.availability_status = 'Available'
-    FROM BookCopy bc
-    JOIN Reservation r ON bc.bookcopy_id = r.bookcopy_id
-    JOIN inserted i ON r.reservation_id = i.reservation_id
-    WHERE r.expiry_date < GETDATE();
-END;
-/*======================================================================*/
-
--- Set BookCopy to “Loaned” on loan --
-CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
-ON Loan
-AFTER INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Update BookCopy availability to 'Loaned' after loan is inserted
-    UPDATE bc
-    SET bc.availability_status = 'Loaned'
-    FROM BookCopy bc
-    JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
-END;
-/*======================================================================*/
-
--- Set BookCopy to “Available” on return --
-CREATE TRIGGER TRG_Loan_UPD_SetCopyToAvailable
-ON Loan
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Update BookCopy to 'Available' when return_date is set
-    UPDATE bc
-    SET bc.availability_status = 'Available'
-    FROM BookCopy bc
-    JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
-    JOIN deleted d ON i.loan_id = d.loan_id
-    WHERE i.return_date IS NOT NULL AND d.return_date IS NULL;
-END;
-/*======================================================================*/
-
--- Restrict non-lecturers from reference books --
-CREATE TRIGGER TRG_Loan_INS_RefBookLecturerOnly
-ON Loan
-INSTEAD OF INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Allow insert only if either:
-    -- (a) The book is loanable, OR
-    -- (b) The user is a lecturer if the book is non-loanable
-    IF EXISTS (
-        SELECT 1
-        FROM inserted i
-        JOIN BookCopy bc ON i.bookcopy_id = bc.bookcopy_id
-        JOIN Book b ON bc.isbn = b.isbn
-        JOIN Tag t ON b.tag_id = t.tag_id
-        WHERE t.loanable_status = 'Non-Loanable'
-          AND NOT EXISTS (
-              SELECT 1
-              FROM Lecturer l
-              JOIN Staff s ON l.user_id = s.user_id
-              WHERE s.user_id = i.user_id
-          )
-    )
-    BEGIN
-        RAISERROR ('Only lecturers are allowed to loan reference (non-loanable) books.', 16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
-
-    -- If passed, allow the original insert
-    INSERT INTO Loan (loan_id, user_id, bookcopy_id, loan_created_date, return_date, loan_fine_amount)
-    SELECT loan_id, user_id, bookcopy_id, loan_created_date, return_date, loan_fine_amount
-    FROM inserted;
-END;
-/*======================================================================*/
-
--- Prevent book deletion if copies exist --
-CREATE TRIGGER TRG_Book_DEL_CheckCopyExists
-ON Book
-INSTEAD OF DELETE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Prevent deletion if there are existing BookCopies or BookAuthors for this Book
-    IF EXISTS (
-        SELECT 1
-        FROM deleted d
-        JOIN BookCopy bc ON d.isbn = bc.isbn
-    ) OR EXISTS (
-        SELECT 1
-        FROM deleted d
-        JOIN BookAuthor ba ON d.isbn = ba.isbn
-    )
-    BEGIN
-        RAISERROR ('Cannot delete book. Existing book copies or author associations found.', 16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
-
-    -- If safe, allow deletion
-    DELETE FROM Book
-    WHERE isbn IN (SELECT isbn FROM deleted);
-END;
-/*======================================================================*/
-
--- One room booking per user at a time & Validate Duration <= 3 hours --
-CREATE TRIGGER TRG_RoomBooking_INS_ValidateDurationAndCheckOverlap
-ON RoomBooking
-INSTEAD OF INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Rule 1: Reject if duration > 3 hours (180 minutes)
-    IF EXISTS (
-        SELECT 1
-        FROM inserted
-        WHERE DATEDIFF(MINUTE, room_booking_created_time, end_time) > 180
-    )
-    BEGIN
-        RAISERROR ('Room bookings must not exceed 3 hours.', 16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
-
-    -- Rule 2: Reject if booking overlaps with another booking by the same user
-    IF EXISTS (
-        SELECT 1
-        FROM inserted i
-        JOIN RoomBooking rb
-          ON rb.user_id = i.user_id
-         AND rb.end_time > i.room_booking_created_time
-         AND rb.room_booking_created_time < i.end_time
-    )
-    BEGIN
-        RAISERROR ('User already has a room booking that overlaps with the requested time.', 16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
-
-    -- Passed both checks: allow insertion
-    INSERT INTO RoomBooking (RoomBooking_ID, user_id, room_id, room_booking_created_time, end_time)
-    SELECT RoomBooking_ID, user_id, room_id, room_booking_created_time, end_time
-    FROM inserted;
-END;
-/*======================================================================*/
-
--- Prevent duplicate reservation for same copy by user --
-CREATE TRIGGER TRG_Reservation_INS_NoDuplicateCopy
-ON Reservation
-INSTEAD OF INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Prevent duplicate reservation for the same BookCopy by the same user
-    IF EXISTS (
-        SELECT 1
-        FROM inserted i
-        JOIN Reservation r
-          ON r.user_id = i.user_id
-         AND r.bookcopy_id = i.bookcopy_id
-    )
-    BEGIN
-        RAISERROR ('Duplicate reservation is not allowed for the same book copy by the same user.', 16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
-
-    -- If not duplicate, allow insert
-    INSERT INTO Reservation (Reservation_ID, user_id, bookcopy_id, reservation_created_date, expiry_date)
-    SELECT Reservation_ID, user_id, bookcopy_id, reservation_created_date, expiry_date
-    FROM inserted;
-END;
-/*======================================================================*/
+GO
+/*=========================================================================================================*/
 
 
 
---------------------------------------------------------------------------
---                        SQL Query Question 2                          --
---------------------------------------------------------------------------
-/*======================================================================*/
+-------------------------------------------------------------------------------------------------------------
+--            ____    ___   _        ___                                ___   ____                         --
+--           / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _    / _ \ |___ \                        --
+--           \___ \ | | | || |     | | | || | | | / _ \| '__|| | | |  | | | |  __) |                       --
+--            ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| |  | |_| | / __/                        --
+--           |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |   \__\_\|_____|                       --
+--                                                            |___/                                        --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
 -- 1) Find the presentation room which has the greatest number of bookings
 SELECT TOP 1 rb.room_id, r.room_name, COUNT(*) AS total_bookings
 FROM RoomBooking rb
 JOIN Room r ON rb.room_id = r.room_id
 GROUP BY rb.room_id, r.room_name
 ORDER BY total_bookings DESC;
-/*======================================================================*/
+/*=========================================================================================================*/
 
 -- 2) Show the person who have never made any loan.
 SELECT u.user_id, u.first_name, u.email
 FROM [User] u
 LEFT JOIN Loan l ON u.user_id = l.user_id
 WHERE l.loan_id IS NULL;
-/*======================================================================*/
+/*=========================================================================================================*/
 
 -- 3) Find the person who paid the highest total fine.
 SELECT TOP 1 u.user_id, u.first_name, u.email, SUM(l.loan_fine_amount) AS total_fines
@@ -442,7 +555,7 @@ FROM [User] u
 JOIN Loan l ON u.user_id = l.user_id
 GROUP BY u.user_id, u.first_name, u.email
 ORDER BY total_fines DESC;
-/*======================================================================*/
+/*=========================================================================================================*/
 
 -- 4) Create a query which provides, 
 --    for the loan, the total amount of fine 
@@ -470,7 +583,7 @@ FROM (
     LEFT JOIN Staff sta ON u.user_id = sta.user_id
 ) AS fine_data
 GROUP BY ROLLUP(PersonType);
-/*======================================================================*/
+/*=========================================================================================================*/
 
 -- 5) Develop one additional query of your own 
 --    which provides information that would be useful 
@@ -490,4 +603,4 @@ ORDER BY total_reservations DESC;
 - Understand which books should be prioritized 
   for future acquisitions or promotions.
 */
-/*======================================================================*/
+/*=========================================================================================================*/
