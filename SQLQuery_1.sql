@@ -158,13 +158,18 @@ CREATE TABLE RoomBooking (
  
 -- User Access Roles (Librarian) 
 CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
+
+USE RKB_Library
+
 CREATE USER librarian FOR LOGIN Lib; -- Create User within that "Lib" Server
 
--- Access 1 for Librarian for [loaning book, update the return date, issue fine]
+-- Access 1: For handling book loans (issue, return, fine)
 GRANT SELECT, INSERT, UPDATE ON Loan TO librarian;  
+
+-- Access 2: For monitoring and updating reservations
 GRANT SELECT, UPDATE ON Reservation TO librarian; 
 
--- Access 2 for Librarian for [Changing Book Copy Status]
+-- Access 3: For changing real-time book status (available, loaned, etc.)
 GRANT SELECT, UPDATE ON BookCopy TO librarian;
 
 -- For explaining inquiries related to Book
@@ -173,6 +178,64 @@ GRANT SELECT ON BookDescription TO librarian;
 GRANT SELECT ON Author TO librarian;
 GRANT SELECT ON Genre TO librarian;
 
+-- User Access (Student)
+CREATE LOGIN Stud WITH PASSWORD = '1'; -- Create Login to Sql Server
+
+USE RKB_Library
+
+CREATE USER student FOR LOGIN Stud; -- Create User within that "Stud" Server
+
+-- Access 1: For Student to Search what is the book about
+GRANT SELECT ON Book TO student;
+GRANT SELECT ON BookDescription TO student;
+GRANT SELECT ON Author TO student;
+GRANT SELECT ON Genre TO student;
+
+-- Access 2: For Student to Check Book Availability
+GRANT SELECT ON BookCopy TO student;
+
+-- Access 3: Reserve Books 
+GRANT SELECT, INSERT ON Reservation TO student;
+
+-- Access 4: Student View Own loans
+GRANT SELECT ON Loan TO student;
+
+-- Access 5: For Student to Book Presentation Room
+GRANT SELECT, INSERT ON RoomBooking TO student;
+
+-- Access 6: View room details
+GRANT SELECT ON Room TO student;
+GRANT SELECT ON RoomDetails TO student;
+
+-- User Access (Lecturer)
+CREATE LOGIN Lect WITH PASSWORD = '1';
+
+USE RKB_Library;
+
+CREATE USER lecturer FOR LOGIN Lect; -- DB user name = 'lecturer'
+
+-- Access 1: Lecturer can browse books, view genres, authors, and descriptions
+GRANT SELECT ON Book TO lecturer;
+GRANT SELECT ON BookDescription TO lecturer;
+GRANT SELECT ON Author TO lecturer;
+GRANT SELECT ON Genre TO lecturer;
+
+-- Access 2: View copy availability (available, loaned, reserved, etc.)
+GRANT SELECT ON BookCopy TO lecturer;
+
+-- Access 3: View Tag details (so they can know which books are reference/non-loanable)
+GRANT SELECT ON Tag TO lecturer;
+
+-- Reservations
+GRANT SELECT, INSERT ON Reservation TO lecturer;
+
+-- View own loan history
+GRANT SELECT ON Loan TO lecturer;
+
+-- Room booking
+GRANT SELECT, INSERT ON RoomBooking TO lecturer;
+GRANT SELECT ON Room TO lecturer;
+GRANT SELECT ON RoomDetails TO lecturer;
 
 
 
