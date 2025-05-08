@@ -5,9 +5,9 @@ CREATE TABLE [User] (
     date_of_birth DATE,
     contact_number VARCHAR(20),
     email VARCHAR(100),
-    gender VARCHAR(10),
-    address TEXT,
-    account_status VARCHAR(20)
+    gender VARCHAR(10) CHECK (gender IN ('male', 'female', 'other')), -- only 3 
+    address VARCHAR(255),
+    account_status VARCHAR(20) CHECK (account_status IN ('active', 'suspended', 'terminated')) -- For Achieving Enum Status
 );
 
 CREATE TABLE LoginCredentials (
@@ -22,14 +22,14 @@ CREATE TABLE Student (
     program VARCHAR(100),
     faculty VARCHAR(100),
     enrollment_date DATE,
-    CGPA DECIMAL(3,2),
+    CGPA DECIMAL(3,2) CHECK (CGPA >= 0 AND CGPA <= 4), -- Check Between 0 and 4 and conditional 3 digits max & 2 decimals max
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
 CREATE TABLE Staff (
     User_ID INT PRIMARY KEY,
     start_working_date DATE,
-    salary DECIMAL(10,2),
+    salary DECIMAL(10,2) CHECK (salary >= 0), 
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
@@ -38,7 +38,7 @@ CREATE TABLE Librarian (
     shift_starting_time TIME,
     shift_ending_time TIME,
     shift_branch VARCHAR(100),
-    shift_task TEXT,
+    shift_task TEXT, -- description based use Text just in case too long
     FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
 );
 
@@ -55,13 +55,13 @@ CREATE TABLE AgeSuggestion (
     AgeSuggestion_ID INT PRIMARY KEY,
     rating_label VARCHAR(50),
     min_age INT,
-    description TEXT
+    description TEXT -- description based use Text just in case too long
 );
 
 CREATE TABLE Genre (
     Genre_ID INT PRIMARY KEY,
     genre_name VARCHAR(100),
-    genre_description TEXT
+    genre_description TEXT -- description based use Text just in case too long
 );
 
 CREATE TABLE Tag (
@@ -69,7 +69,7 @@ CREATE TABLE Tag (
     tag_name VARCHAR(50),
     fine_rate DECIMAL(5,2),
     loan_period INT,
-    loanable_status VARCHAR(10) CHECK (loanable_status IN ('yes', 'no'))
+    loanable_status VARCHAR(20) CHECK (loanable_status IN ('loanable', 'non loanable'))
 );
 
 CREATE TABLE Book (
@@ -105,7 +105,7 @@ CREATE TABLE BookAuthor (
 CREATE TABLE BookCopy (
     BookCopy_ID INT PRIMARY KEY,
     ISBN VARCHAR(20),
-    availability_status VARCHAR(10) CHECK (availability_status IN ('available', 'loaned')),
+    availability_status VARCHAR(20) CHECK (availability_status IN ('Available', 'Loaned', 'Reserved', 'Lost')), -- Store Reservation & Loan Status
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
 
@@ -113,7 +113,7 @@ CREATE TABLE Loan (
     Loan_ID INT PRIMARY KEY,
     BookCopy_ID INT,
     User_ID INT,
-    loan_fine_amount DECIMAL(6,2),
+    loan_fine_amount DECIMAL(6,2) CHECK (loan_fine_amount >= 0), -- max 6 digits so can be up to thousand (e.g. Rm9999.99)
     loan_created_date DATE,
     return_date DATE,
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
@@ -139,7 +139,7 @@ CREATE TABLE RoomDetails (
     Room_ID INT PRIMARY KEY,
     room_capacity INT,
     room_floor INT,
-    maintenance_status VARCHAR(10) CHECK (maintenance_status IN ('available', 'unavailable')),
+    maintenance_status VARCHAR(20) CHECK (maintenance_status IN ('available', 'under maintenance', 'closed')),
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
 );
 
