@@ -1,3 +1,6 @@
+Create Database RKB_Library;
+Use RKB_Library;
+
 CREATE TABLE [User] (
     User_ID INT PRIMARY KEY,
     first_name VARCHAR(50),
