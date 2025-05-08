@@ -1,4 +1,4 @@
-CREATE TABLE User (
+CREATE TABLE [User] (
     User_ID INT PRIMARY KEY,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
@@ -14,7 +14,7 @@ CREATE TABLE LoginCredentials (
     User_ID INT PRIMARY KEY,
     username VARCHAR(50) UNIQUE,
     password VARCHAR(100),
-    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
 CREATE TABLE Student (
@@ -23,7 +23,14 @@ CREATE TABLE Student (
     faculty VARCHAR(100),
     enrollment_date DATE,
     CGPA DECIMAL(3,2),
-    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
+);
+
+CREATE TABLE Staff (
+    User_ID INT PRIMARY KEY,
+    start_working_date DATE,
+    salary DECIMAL(10,2),
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
 CREATE TABLE Librarian (
@@ -34,7 +41,6 @@ CREATE TABLE Librarian (
     shift_task TEXT,
     FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
 );
-
 
 CREATE TABLE Lecturer (
     User_ID INT PRIMARY KEY,
@@ -111,7 +117,7 @@ CREATE TABLE Loan (
     loan_created_date DATE,
     return_date DATE,
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
-    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
 CREATE TABLE Reservation (
@@ -121,7 +127,7 @@ CREATE TABLE Reservation (
     reservation_created_date DATE,
     expiry_date DATE,
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
-    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
 CREATE TABLE Room (
@@ -144,5 +150,5 @@ CREATE TABLE RoomBooking (
     room_booking_created_time DATETIME,
     end_time DATETIME,
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID),
-    FOREIGN KEY (User_ID) REFERENCES User(User_ID)
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
