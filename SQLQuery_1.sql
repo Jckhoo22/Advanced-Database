@@ -46,7 +46,7 @@ CREATE TABLE Librarian (
 );
 
 CREATE TABLE Lecturer (
-    User_ID INT PRIMARY KEY,
+    User_ID INT PRIMARY KEY, 
     department VARCHAR(100),
     specialization VARCHAR(100),
     office_hour VARCHAR(50),
@@ -108,7 +108,7 @@ CREATE TABLE BookAuthor (
 CREATE TABLE BookCopy (
     BookCopy_ID INT PRIMARY KEY,
     ISBN VARCHAR(20),
-    availability_status VARCHAR(20) CHECK (availability_status IN ('Available', 'Loaned', 'Reserved', 'Lost')), -- Store Reservation & Loan Status
+    availability_status VARCHAR(20) CHECK (availability_status IN ('available', 'loaned', 'reserved')), -- Store Reservation & Loan Status
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
 
@@ -142,16 +142,39 @@ CREATE TABLE RoomDetails (
     Room_ID INT PRIMARY KEY,
     room_capacity INT,
     room_floor INT,
-    maintenance_status VARCHAR(20) CHECK (maintenance_status IN ('available', 'under maintenance', 'closed')),
+    maintenance_status VARCHAR(20) CHECK (maintenance_status IN ('available', 'not available','under maintenance')),
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
 );
 
 CREATE TABLE RoomBooking (
     RoomBooking_ID INT PRIMARY KEY,
-    Room_ID INT,
+    Room_ID INT, 
     User_ID INT,
     room_booking_created_time DATETIME,
     end_time DATETIME,
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+
+ 
+-- User Access Roles (Librarian) 
+CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
+CREATE USER librarian FOR LOGIN Lib; -- Create User within that "Lib" Server
+
+-- Access 1 for Librarian for [loaning book, update the return date, issue fine]
+GRANT SELECT, INSERT, UPDATE ON Loan TO librarian;  
+GRANT SELECT, UPDATE ON Reservation TO librarian; 
+
+-- Access 2 for Librarian for [Changing Book Copy Status]
+GRANT SELECT, UPDATE ON BookCopy TO librarian;
+
+-- For explaining inquiries related to Book
+GRANT SELECT ON Book to librarian; 
+GRANT SELECT ON BookDescription TO librarian;
+GRANT SELECT ON Author TO librarian;
+GRANT SELECT ON Genre TO librarian;
+
+
+
+
+
