@@ -304,8 +304,8 @@ GRANT SELECT ON RoomDetails TO lecturer;
 -- SP1 -- Invoke Trigger 1
 GO
 CREATE PROCEDURE SP_Loan_Book
-    @User_ID VarChar(50),
-    @BookCopy_ID VarChar(50)
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -338,7 +338,7 @@ BEGIN
         FROM Book b
         JOIN Tag t ON b.Tag_ID = t.Tag_ID
         JOIN BookCopy bc ON b.ISBN = bc.ISBN
-        WHERE bc.BookCopy_ID = @BookCopy_ID AND t.loanable_status != 'Loanable'
+        WHERE bc.BookCopy_ID = @BookCopy_ID AND t.loanable_status != 'loanable'
     )
     BEGIN
         RAISERROR('Book is not loanable.', 16, 1);
@@ -351,7 +351,7 @@ BEGIN
 
     -- Update the book copy's availability to 'unavailable'
     UPDATE BookCopy
-    SET availability_status = 'Loaned'
+    SET availability_status = 'loaned'
     WHERE BookCopy_ID = @BookCopy_ID;
 END;
 GO
@@ -366,10 +366,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @BookCopy_ID VarChar(50);
+    DECLARE @BookCopy_ID VARCHAR(10);
     DECLARE @loan_created_date DATE;
     DECLARE @ISBN VARCHAR(20);
-    DECLARE @Tag_ID VarChar(50);
+    DECLARE @Tag_ID VARCHAR(10);
     DECLARE @loan_period INT;
     DECLARE @fine_rate DECIMAL(10, 2);
     DECLARE @overdue_days INT;
@@ -418,8 +418,8 @@ GO
 
 -- SP3 -- Invoke Trigger 3
 CREATE PROCEDURE SP_Reserve_Book
-    @User_ID VarChar(50),
-    @BookCopy_ID VarChar(50),
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10),
     @reservation_created_date DATE
 AS
 BEGIN
@@ -457,7 +457,7 @@ BEGIN
 
     -- Update book copy status to reserved
     UPDATE BookCopy
-    SET availability_status = 'Reserved'
+    SET availability_status = 'reserved'
     WHERE BookCopy_ID = @BookCopy_ID;
 END;
 
@@ -481,7 +481,7 @@ BEGIN
 
     -- Update BookCopy availability to 'Loaned' after loan is inserted
     UPDATE bc
-    SET bc.availability_status = 'Loaned'
+    SET bc.availability_status = 'loaned'
     FROM BookCopy bc
     JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
 END;
@@ -498,7 +498,7 @@ BEGIN
 
     -- Update BookCopy to 'Available' when return_date is set
     UPDATE bc
-    SET bc.availability_status = 'Available'
+    SET bc.availability_status = 'available'
     FROM BookCopy bc
     JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
     JOIN deleted d ON i.loan_id = d.loan_id
