@@ -1,6 +1,16 @@
 USE RKB_Library
 GO
 
+/*
+  ____          _          _                            ____                    _    _               
+ |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __  
+ | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \ 
+ | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |
+ |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|                                                                                                  
+
+*/
+
+
 CREATE TABLE [User] (
     User_ID VARCHAR(10) PRIMARY KEY,
     first_name VARCHAR(50),
@@ -156,6 +166,16 @@ CREATE TABLE RoomBooking (
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
 
+/*
+  _   _                    ____         _        
+ | | | | ___   ___  _ __  |  _ \  ___  | |  ___  
+ | | | |/ __| / _ \| '__| | |_) |/ _ \ | | / _ \ 
+ | |_| |\__ \|  __/| |    |  _ <| (_) || ||  __/ 
+  \___/ |___/ \___||_|    |_| \_\\___/ |_| \___| 
+
+*/
+
+
 -- User Access Roles (Librarian) 
 CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
 
@@ -240,3 +260,4 @@ GRANT SELECT, INSERT ON RoomBooking TO lecturer;
 GRANT SELECT ON Room TO lecturer;
 GRANT SELECT ON RoomDetails TO lecturer;
 
+ 
