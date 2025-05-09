@@ -10,7 +10,6 @@ GO
 
 */
 
-
 CREATE TABLE [User]
 (
     User_ID VARCHAR(10) PRIMARY KEY,
@@ -301,9 +300,9 @@ GRANT SELECT ON RoomDetails TO lecturer;
                                                                                                
  */
 
--- SP1 -- Invoke Trigger 1
+-- SP1 will Invoke Trigger 1 
 GO
-CREATE PROCEDURE SP_Loan_Book
+CREATE PROCEDURE SP_Loan_Book -- Take 2 Parameter
     @User_ID VARCHAR(10),
     @BookCopy_ID VARCHAR(10)
 AS
@@ -312,52 +311,57 @@ BEGIN
 
     -- Check if user has 10 or more active loans (no return_date yet)
     IF (
-        SELECT COUNT(*) 
-        FROM Loan 
-        WHERE User_ID = @User_ID AND return_date IS NULL
+        SELECT COUNT(*)
+    FROM Loan
+    WHERE User_ID = @User_ID AND return_date IS NULL
     ) >= 10
     BEGIN
         RAISERROR('User already has 10 active loans.', 16, 1);
         RETURN;
-    END
+    END 
 
     -- Check if book copy is available
-    IF (
-        SELECT availability_status 
-        FROM BookCopy 
-        WHERE BookCopy_ID = @BookCopy_ID 
-    ) != 'available' 
-    BEGIN
+    IF ( 
+    SELECT availability_status
+    FROM BookCopy
+    WHERE BookCopy_ID = @BookCopy_ID
+) != 'available' 
+BEGIN
         RAISERROR('Book copy is not available.', 16, 1);
         RETURN;
     END
 
-    -- Check if the book is loanable via its Tag
+    -- Check tag loanable status
     IF EXISTS (
-        SELECT 1
+    SELECT 1
         FROM Book b
-        JOIN Tag t ON b.Tag_ID = t.Tag_ID
-        JOIN BookCopy bc ON b.ISBN = bc.ISBN
-        WHERE bc.BookCopy_ID = @BookCopy_ID AND t.loanable_status != 'loanable'
-    )
-    BEGIN
-        RAISERROR('Book is not loanable.', 16, 1);
+            JOIN Tag t ON b.Tag_ID = t.Tag_ID
+            JOIN BookCopy bc ON b.ISBN = bc.ISBN
+        WHERE bc.BookCopy_ID = @BookCopy_ID
+            AND t.loanable_status = 'non loanable'
+)
+    -- If it's loanable and the user is lecturer can loan 
+        AND NOT EXISTS ( 
+    SELECT 1
+        FROM Lecturer
+        WHERE User_ID = @User_ID
+)
+BEGIN
+        RAISERROR('Only lecturers can borrow this type of book.', 16, 1);
         RETURN;
     END
 
-    -- All checks passed: insert into Loan
-    INSERT INTO Loan (BookCopy_ID, User_ID, loan_fine_amount, loan_created_date)
-    VALUES (@BookCopy_ID, @User_ID, 0, GETDATE());
 
-    -- Update the book copy's availability to 'unavailable'
-    UPDATE BookCopy
-    SET availability_status = 'loaned'
-    WHERE BookCopy_ID = @BookCopy_ID;
+    -- All checks passed: insert into Loan (Invoke Trigger later to update book copy ID)
+    INSERT INTO Loan
+        (BookCopy_ID, User_ID, loan_fine_amount, loan_created_date)
+    VALUES
+        (@BookCopy_ID, @User_ID, 0, GETDATE());
+
 END;
 GO
 
--- SP2 -- Invoke Trigger 2
-
+-- SP2 will Invoke Trigger 2 I think we should pass book copy and search active loan (without return date)
 GO
 CREATE PROCEDURE SP_Return_Book
     @Loan_ID INT,
@@ -376,7 +380,7 @@ BEGIN
     DECLARE @fine_amount DECIMAL(10, 2);
 
     -- Get loan details
-    SELECT 
+    SELECT
         @BookCopy_ID = BookCopy_ID,
         @loan_created_date = loan_created_date
     FROM Loan
@@ -393,7 +397,7 @@ BEGIN
     WHERE ISBN = @ISBN;
 
     -- Get loan_period and fine_rate from Tag
-    SELECT 
+    SELECT
         @loan_period = loan_period,
         @fine_rate = fine_rate
     FROM Tag
@@ -404,7 +408,7 @@ BEGIN
     IF @overdue_days < 0
         SET @overdue_days = 0;
 
-    -- Calculate fine
+    -- Calculate fine Formula = Overdue * Rate
     SET @fine_amount = @overdue_days * @fine_rate;
 
     -- Update Loan with return_date and fine
@@ -431,8 +435,8 @@ BEGIN
     -- Check if book copy is currently unavailable (i.e., loaned out)
     IF (
         SELECT availability_status
-        FROM BookCopy
-        WHERE BookCopy_ID = @BookCopy_ID
+    FROM BookCopy
+    WHERE BookCopy_ID = @BookCopy_ID
     ) != 'Loaned'
     BEGIN
         RAISERROR('Book copy is not currently loaned out and cannot be reserved.', 16, 1);
@@ -440,7 +444,8 @@ BEGIN
     END
 
     -- Get loan_created_date for the active loan of this book copy
-    SELECT TOP 1 @loan_created_date = loan_created_date
+    SELECT TOP 1
+        @loan_created_date = loan_created_date
     FROM Loan
     WHERE BookCopy_ID = @BookCopy_ID AND return_date IS NULL;
 
@@ -452,8 +457,10 @@ BEGIN
     END
 
     -- Insert reservation record
-    INSERT INTO Reservation (BookCopy_ID, User_ID, reservation_created_date, expiry_date)
-    VALUES (@BookCopy_ID, @User_ID, @reservation_created_date, @expiry_date);
+    INSERT INTO Reservation
+        (BookCopy_ID, User_ID, reservation_created_date, expiry_date)
+    VALUES
+        (@BookCopy_ID, @User_ID, @reservation_created_date, @expiry_date);
 
     -- Update book copy status to reserved
     UPDATE BookCopy
@@ -470,7 +477,8 @@ END;
                  |___/  |___/             
  */
 
--- Invoke after SP1
+-- Invoke after SP1 where Trigger activated by SP_Loan_Book and any direct Loan insert
+
 GO
 CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
 ON Loan
@@ -483,7 +491,7 @@ BEGIN
     UPDATE bc
     SET bc.availability_status = 'loaned'
     FROM BookCopy bc
-    JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
+        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
 END;
 GO
 
@@ -500,8 +508,8 @@ BEGIN
     UPDATE bc
     SET bc.availability_status = 'available'
     FROM BookCopy bc
-    JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
-    JOIN deleted d ON i.loan_id = d.loan_id
+        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
+        JOIN deleted d ON i.loan_id = d.loan_id
     WHERE i.return_date IS NOT NULL AND d.return_date IS NULL;
 END;
 GO
@@ -519,8 +527,7 @@ BEGIN
     UPDATE r
     SET r.expiry_date = DATEADD(DAY, 3, i.reservation_created_date)
     FROM Reservation r
-    JOIN inserted i ON r.reservation_id = i.reservation_id;
+        JOIN inserted i ON r.reservation_id = i.reservation_id;
 END;
 GO
-
 
