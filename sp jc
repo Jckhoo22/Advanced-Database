@@ -1,0 +1,246 @@
+-- SP3 -- Invoke Trigger 3 with Concurrency Control (Nested SP)
+CREATE PROCEDURE SP_Reserve_Book
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10),
+    @reservation_created_date DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Result INT;
+
+    BEGIN TRANSACTION;
+
+    -- Lock the BookCopy row to prevent concurrency issues
+    SELECT 1
+    FROM BookCopy WITH (UPDLOCK, HOLDLOCK)
+    WHERE BookCopy_ID = @BookCopy_ID;
+
+    -- Step 1: Validate book copy
+    EXEC @Result = SP_Validate_BookCopy_ForReservation @BookCopy_ID;
+    IF @Result = 1
+    BEGIN
+        RAISERROR('Book copy is not valid for reservation.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- Step 2: Check if user already reserved same book
+    EXEC @Result = SP_Check_User_Already_Reserved_Book @User_ID, @BookCopy_ID;
+    IF @Result = 2
+    BEGIN
+        RAISERROR('User already has an active reservation for this book.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- Step 3: Insert reservation
+    EXEC @Result = SP_Insert_Reservation_Record @User_ID, @BookCopy_ID, @reservation_created_date;
+    IF @Result = 3
+    BEGIN
+        RAISERROR('Failed to insert reservation.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- Step 4: Update book copy status
+    EXEC @Result = SP_Update_BookCopy_Status_Reserved @BookCopy_ID;
+    IF @Result = 4
+    BEGIN
+        RAISERROR('Failed to update book copy status.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    COMMIT TRANSACTION;
+END;
+GO
+
+CREATE PROCEDURE SP_Validate_BookCopy_ForReservation
+    @BookCopy_ID VARCHAR(10)
+AS
+BEGIN
+    DECLARE @status VARCHAR(20);
+
+    SELECT @status = availability_status
+    FROM BookCopy
+    WHERE BookCopy_ID = @BookCopy_ID;
+
+    IF @status IS NULL OR @status = 'reserved' OR @status != 'loaned'
+        RETURN 1;
+    -- Invalid
+
+    RETURN 0;
+-- Valid
+END;
+GO
+
+CREATE PROCEDURE SP_Check_User_Already_Reserved_Book
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10)
+AS
+BEGIN
+    DECLARE @ISBN VARCHAR(20);
+
+    -- Get ISBN of the BookCopy
+    SELECT @ISBN = ISBN
+    FROM BookCopy
+    WHERE BookCopy_ID = @BookCopy_ID;
+
+    -- Check if user already has a non-expired reservation for this ISBN
+    IF EXISTS (
+        SELECT 1
+    FROM Reservation r WITH (HOLDLOCK) -- Optional: prevent phantom read
+        JOIN BookCopy bc ON r.BookCopy_ID = bc.BookCopy_ID
+    WHERE r.User_ID = @User_ID
+        AND bc.ISBN = @ISBN
+        AND r.expiry_date > GETDATE()
+    )
+        RETURN 2;
+    -- Conflict: Already reserved
+
+    RETURN 0;
+-- OK
+END;
+GO
+
+
+CREATE PROCEDURE SP_Insert_Reservation_Record
+    @User_ID VARCHAR(10),
+    @BookCopy_ID VARCHAR(10),
+    @reservation_created_date DATE
+AS
+BEGIN
+    DECLARE @LastID VARCHAR(10);
+    DECLARE @NewNum INT;
+    DECLARE @NewID VARCHAR(10);
+
+    BEGIN TRY
+        -- Lock the Reservation table to prevent ID collision
+        SELECT TOP 1
+            @LastID = Reservation_ID
+        FROM Reservation WITH (TABLOCKX, HOLDLOCK)
+        WHERE Reservation_ID LIKE 'RS%'
+        ORDER BY Reservation_ID DESC;
+
+        -- Generate new number
+        IF @LastID IS NULL
+            SET @NewNum = 1;
+        ELSE
+            SET @NewNum = CAST(SUBSTRING(@LastID, 3, LEN(@LastID) - 2) AS INT) + 1;
+
+        -- Generate ID with 4-digit padding if below 10000
+        IF @NewNum < 10000
+            SET @NewID = 'RS' + RIGHT('0000' + CAST(@NewNum AS VARCHAR), 4);
+        ELSE
+            SET @NewID = 'RS' + CAST(@NewNum AS VARCHAR);  -- No padding needed 
+
+        -- Optional safety check (10 char max)
+        IF LEN(@NewID) > 10
+        BEGIN
+            RAISERROR('Generated Reservation_ID exceeds allowed length.', 16, 1);
+            RETURN 98;
+        END
+
+        -- Insert reservation (expiry handled by trigger)
+        INSERT INTO Reservation
+            (Reservation_ID, BookCopy_ID, User_ID, reservation_created_date, expiry_date)
+        VALUES
+            (@NewID, @BookCopy_ID, @User_ID, @reservation_created_date, NULL);
+
+        RETURN 0; -- Success
+    END TRY
+    BEGIN CATCH
+        RETURN 3; -- Insert failed
+    END CATCH
+END;
+GO
+
+
+
+CREATE PROCEDURE SP_Update_BookCopy_Status_Reserved
+    @BookCopy_ID VARCHAR(10)
+AS
+BEGIN
+    BEGIN TRY
+        UPDATE BookCopy
+        SET availability_status = 'reserved'
+        WHERE BookCopy_ID = @BookCopy_ID;
+
+        IF @@ROWCOUNT = 0
+            RETURN 4;
+
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        RETURN 4;
+    END CATCH
+END;
+GO
+
+
+
+
+
+ /*
+  _____       _                           
+ |_   _|_ __ (_)  __ _   __ _   ___  _ __ 
+   | | | '__|| | / _` | / _` | / _ \| '__|
+   | | | |   | || (_| || (_| ||  __/| |   
+   |_| |_|   |_| \__, | \__, | \___||_|   
+                 |___/  |___/             
+ */
+
+-- Invoke after SP1 where Trigger activated by SP_Loan_Book and any direct Loan insert
+
+GO
+CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
+ON Loan
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update BookCopy availability to 'Loaned' after loan is inserted
+    UPDATE bc
+    SET bc.availability_status = 'loaned'
+    FROM BookCopy bc
+        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
+END;
+GO
+
+-- Invoke after SP2
+GO
+CREATE TRIGGER TRG_Loan_UPD_SetCopyToAvailable
+ON Loan
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update BookCopy to 'Available' when return_date is set
+    UPDATE bc
+    SET bc.availability_status = 'available'
+    FROM BookCopy bc
+        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
+        JOIN deleted d ON i.loan_id = d.loan_id
+    WHERE i.return_date IS NOT NULL AND d.return_date IS NULL;
+END;
+GO
+
+-- Invoke after SP3 (Run as atomic after the SP) JC 
+GO
+CREATE TRIGGER TRG_Reservation_INS_SetExpiryDate
+ON Reservation
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update expiry_date to 3 days after reservation_created_date
+    UPDATE r
+    SET r.expiry_date = DATEADD(DAY, 3, i.reservation_created_date)
+    FROM Reservation r
+        JOIN inserted i ON r.reservation_id = i.reservation_id;
+END;
+GO
