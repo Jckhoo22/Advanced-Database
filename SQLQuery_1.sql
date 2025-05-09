@@ -621,9 +621,9 @@ BEGIN
 
     -- Rotate availability status
     SET @Status = CASE (@counter6 % 3)
-                    WHEN 1 THEN 'Available'
-                    WHEN 2 THEN 'Loaned'
-                    ELSE 'Reserved'
+                    WHEN 1 THEN 'available'
+                    WHEN 2 THEN 'loaned'
+                    ELSE 'reserved'
                   END;
 
     INSERT INTO BookCopy (BookCopy_ID, ISBN, availability_status)
@@ -638,7 +638,7 @@ DECLARE @counter7 INT = 1;
 DECLARE @ISBN3 VARCHAR(20);
 DECLARE @AuthorID1 VARCHAR(10);
 
-WHILE @counter7 <= 30
+WHILE @counter7 <= 20
 BEGIN
     SET @ISBN3 = 'ISBN' + RIGHT('000000000000' + CAST(@counter7 AS VARCHAR), 12);
     SET @AuthorID1 = 'A' + RIGHT('0000' + CAST((@counter7 % 5) + 1 AS VARCHAR), 4);
