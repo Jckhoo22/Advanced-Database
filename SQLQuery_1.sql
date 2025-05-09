@@ -397,6 +397,10 @@ BEGIN
     INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
     VALUES (@StuID, @FName, @LName, @DOB, @Contact, @Email, @Gender, @Address, @AccountStatus);
 
+	-- Insert into LoginCredentials // added
+	INSERT INTO LoginCredentials (User_ID, username, password)
+    VALUES (@StuID, LOWER(@FName + CAST(@counter AS VARCHAR)), 'P@ssStudent!');
+
     -- Student Table
     SET @Program = 'Program ' + CAST((@counter % 5 + 1) AS VARCHAR);
     SET @Faculty = 'Faculty ' + CAST((@counter % 4 + 1) AS VARCHAR);
@@ -445,12 +449,16 @@ BEGIN
     INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
     VALUES (@LecID, @LecFName, @LecLName, @LecDOB, @LecContact, @LecEmail, @LecGender, @LecAddress, @LecAccountStatus);
 
+	INSERT INTO LoginCredentials (User_ID, username, password)
+    VALUES (@LecID, LOWER(@LecFName + CAST(@counter1 AS VARCHAR)), 'P@ssLecturer!');
+
     -- Staff
     SET @LecStartDate = DATEADD(YEAR, -1 * (ABS(CHECKSUM(NEWID())) % 20), GETDATE());
     SET @LecSalary = ROUND(4000 + (RAND() * 3000), 2);
 
     INSERT INTO Staff (User_ID, start_working_date, salary)
     VALUES (@LecID, @LecStartDate, @LecSalary);
+
 
     -- Lecturer
     SET @Department = 'Department ' + CAST((@counter1 % 5 + 1) AS VARCHAR);
@@ -499,6 +507,9 @@ BEGIN
 
     INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
     VALUES (@LibID, @LibFName, @LibLName, @LibDOB, @LibContact, @LibEmail, @LibGender, @LibAddress, @LibAccountStatus);
+
+	INSERT INTO LoginCredentials (User_ID, username, password)
+    VALUES (@LibID, LOWER(@LibFName + CAST(@counter2 AS VARCHAR)), 'P@ssLibrarian!');
 
     -- Staff
     SET @LibStartDate = DATEADD(YEAR, -1 * (ABS(CHECKSUM(NEWID())) % 10), GETDATE());
@@ -668,10 +679,105 @@ BEGIN
 END;
 /*=========================================================================================================*/
 
---
+-- Insert 30 Loan Records (mix of students and lecturers)
+DECLARE @loanCounter INT = 1;
+DECLARE @LoanID VARCHAR(10);
+DECLARE @BookCopyID1 VARCHAR(10);
+DECLARE @UserID VARCHAR(10);
+DECLARE @FineAmount DECIMAL(6,2);
+DECLARE @LoanDate DATE;
+DECLARE @ReturnDate DATE;
 
+WHILE @loanCounter <= 30
+BEGIN
+    SET @LoanID = 'L' + RIGHT('0000' + CAST(@loanCounter AS VARCHAR), 4);
+    SET @BookCopyID1 = 'BC' + RIGHT('00000' + CAST(((@loanCounter - 1) % 40 + 1) AS VARCHAR), 5);
 
+    -- Use student IDs for first 20, lecturers for next 10
+    IF @loanCounter <= 20
+        SET @UserID = 'U' + RIGHT('0000' + CAST(@loanCounter AS VARCHAR), 4);  -- Students U0001–U0020
+    ELSE
+        SET @UserID = 'U' + RIGHT('0000' + CAST((@loanCounter + 1) AS VARCHAR), 4);  -- Lecturers U0022–U0031
 
+    -- Random loan date in the last 60 days
+    SET @LoanDate = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 60), GETDATE());
+
+    -- Random return date (some NULL to simulate active loans)
+    IF @loanCounter % 5 = 0
+        SET @ReturnDate = NULL;  -- Not yet returned
+    ELSE
+        SET @ReturnDate = DATEADD(DAY, (ABS(CHECKSUM(NEWID())) % 15), @LoanDate);
+
+    -- Random fine (some will be 0, some small overdue fines)
+    SET @FineAmount = CASE WHEN @ReturnDate IS NULL THEN 0 ELSE ROUND(RAND() * 5.00, 2) END;
+
+    INSERT INTO Loan (Loan_ID, BookCopy_ID, User_ID, loan_fine_amount, loan_created_date, return_date)
+    VALUES (@LoanID, @BookCopyID1, @UserID, @FineAmount, @LoanDate, @ReturnDate);
+
+    SET @loanCounter = @loanCounter + 1;
+END;
+/*=========================================================================================================*/
+
+-- Insert 15 Reservations (mix of students and lecturers)
+DECLARE @resCounter INT = 1;
+DECLARE @ResID VARCHAR(10);
+DECLARE @ResBookCopyID VARCHAR(10);
+DECLARE @ResUserID VARCHAR(10);
+DECLARE @ResDate DATE;
+DECLARE @ExpiryDate DATE;
+
+WHILE @resCounter <= 15
+BEGIN
+    SET @ResID = 'RS' + RIGHT('0000' + CAST(@resCounter AS VARCHAR), 4);
+    SET @ResBookCopyID = 'BC' + RIGHT('00000' + CAST((@resCounter % 30 + 1) AS VARCHAR), 5); -- Spread across first 30 book copies
+
+    -- Use students for first 10, lecturers for the rest
+    IF @resCounter <= 10
+        SET @ResUserID = 'U' + RIGHT('0000' + CAST(@resCounter AS VARCHAR), 4);  -- Students U0001–U0010
+    ELSE
+        SET @ResUserID = 'U' + RIGHT('0000' + CAST((@resCounter + 10) AS VARCHAR), 4); -- Lecturers U0021–U0025
+
+    -- Reservation date within the past 10 days
+    SET @ResDate = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 10), GETDATE());
+    SET @ExpiryDate = DATEADD(DAY, 3, @ResDate); -- Always 3 days ahead
+
+    INSERT INTO Reservation (Reservation_ID, BookCopy_ID, User_ID, reservation_created_date, expiry_date)
+    VALUES (@ResID, @ResBookCopyID, @ResUserID, @ResDate, @ExpiryDate);
+
+    SET @resCounter = @resCounter + 1;
+END;
+/*=========================================================================================================*/
+
+-- Insert 10 RoomBooking records (spread across 5 rooms, students and lecturers)
+DECLARE @rbCounter INT = 1;
+DECLARE @RBID VARCHAR(10);
+DECLARE @RoomID VARCHAR(10);
+DECLARE @RBUserID VARCHAR(10);
+DECLARE @RBStart DATETIME;
+DECLARE @RBEnd DATETIME;
+
+WHILE @rbCounter <= 10
+BEGIN
+    SET @RBID = 'RB' + RIGHT('0000' + CAST(@rbCounter AS VARCHAR), 4);
+    SET @RoomID = 'R00' + CAST(((@rbCounter - 1) % 5 + 1) AS VARCHAR); -- R001 to R005 loop
+
+    -- Use student U0001–U0005, lecturer U0021–U0025
+    IF @rbCounter <= 5
+        SET @RBUserID = 'U' + RIGHT('0000' + CAST(@rbCounter AS VARCHAR), 4); -- Student
+    ELSE
+        SET @RBUserID = 'U' + RIGHT('0000' + CAST((@rbCounter + 16) AS VARCHAR), 4); -- Lecturer
+
+    -- Random start datetime within the last 5 days, between 8AM–3PM
+    SET @RBStart = DATEADD(HOUR, 8 + (ABS(CHECKSUM(NEWID())) % 8), DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 5), GETDATE()));
+
+    -- Add 1 to 3 hours duration (max allowed)
+    SET @RBEnd = DATEADD(HOUR, (ABS(CHECKSUM(NEWID())) % 3) + 1, @RBStart);
+
+    INSERT INTO RoomBooking (RoomBooking_ID, Room_ID, User_ID, room_booking_created_time, end_time)
+    VALUES (@RBID, @RoomID, @RBUserID, @RBStart, @RBEnd);
+
+    SET @rbCounter = @rbCounter + 1;
+END;
 /*=========================================================================================================*/
 
 
@@ -953,36 +1059,25 @@ WHERE l.loan_id IS NULL;
 /*=========================================================================================================*/
 
 -- 3) Find the person who paid the highest total fine.
-SELECT TOP 1 u.user_id, u.first_name, u.email, SUM(l.loan_fine_amount) AS total_fines
-FROM [User] u
-JOIN Loan l ON u.user_id = l.user_id
-GROUP BY u.user_id, u.first_name, u.email
-ORDER BY total_fines DESC;
-/*=========================================================================================================*/
-
--- 4) Create a query which provides, 
---    for the loan, the total amount of fine 
---    from different types of persons in the university 
---    such as staff and student.
 SELECT 
-    PersonType,
+    ISNULL(PersonType, 'Total') AS PersonType,
     SUM(loan_fine_amount) AS total_fine
 FROM (
     SELECT 
         u.user_id,
         CASE 
-            WHEN s.user_id IS NOT NULL THEN 'Student'
-            WHEN lec.user_id IS NOT NULL THEN 'Lecturer'
             WHEN lib.user_id IS NOT NULL THEN 'Librarian'
+            WHEN lec.user_id IS NOT NULL THEN 'Lecturer'
+            WHEN s.user_id IS NOT NULL THEN 'Student'
             WHEN sta.user_id IS NOT NULL THEN 'Staff'
             ELSE 'Unknown'
         END AS PersonType,
         l.loan_fine_amount
     FROM Loan l
     JOIN [User] u ON l.user_id = u.user_id
-    LEFT JOIN Student s ON u.user_id = s.user_id
-    LEFT JOIN Lecturer lec ON u.user_id = lec.user_id
     LEFT JOIN Librarian lib ON u.user_id = lib.user_id
+    LEFT JOIN Lecturer lec ON u.user_id = lec.user_id
+    LEFT JOIN Student s ON u.user_id = s.user_id
     LEFT JOIN Staff sta ON u.user_id = sta.user_id
 ) AS fine_data
 GROUP BY ROLLUP(PersonType);
