@@ -1,4 +1,25 @@
 USE RKB_Library;
+
+SELECT * FROM [User];
+SELECT * FROM LoginCredentials;
+SELECT * FROM Librarian;
+SELECT * FROM Staff;
+SELECT * FROM Lecturer;
+SELECT * FROM Student;
+SELECT * FROM Book;
+SELECT * FROM BookDescription;
+SELECT * FROM Author;
+SELECT * FROM Genre;
+SELECT * FROM Tag;
+SELECT * FROM AgeSuggestion;
+SELECT * FROM BookAuthor;
+SELECT * FROM BookCopy;
+SELECT * FROM Room;
+SELECT * FROM RoomDetails;
+SELECT * FROM RoomBooking;
+SELECT * FROM Reservation;
+SELECT * FROM Loan;
+
 -------------------------------------------------------------------------------------------------------------
 --                             _   _                    ____         _                                     --
 --                            | | | | ___   ___  _ __  |  _ \  ___  | |  ___                               --
@@ -99,12 +120,12 @@ GRANT SELECT ON RoomDetails TO lecturer;
 
 
 -------------------------------------------------------------------------------------------------------------
---    ____          _          _                            ____                    _    _                 --
---   |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __    --
---   | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \   --
---   | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |  --
---   |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|  --
---                                                                                                         --
+ --   ____          _          _                            ____                    _    _                 --
+ --  |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __    --
+ --  | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \   --
+ --  | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |  --
+ --  |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|  --
+ --                                                                                                        --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
 CREATE TABLE [User] (
@@ -284,6 +305,378 @@ CREATE TABLE RoomBooking (
 
 
 -------------------------------------------------------------------------------------------------------------
+--                       ___                          _     ____          _                                --
+--                      |_ _| _ __   ___   ___  _ __ | |_  |  _ \   __ _ | |_  __ _                        --
+--                       | | | '_ \ / __| / _ \| '__|| __| | | | | / _` || __|/ _` |                       --
+--                       | | | | | |\__ \|  __/| |   | |_  | |_| || (_| || |_| (_| |                       --
+--                      |___||_| |_||___/ \___||_|    \__| |____/  \__,_| \__|\__,_|                       --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+--Insert Data into Genre Table
+INSERT INTO Genre (Genre_ID, genre_name, genre_description)
+VALUES
+('G001', 'Fiction', 'Literary works invented by the imagination, such as novels or short stories'),
+('G002', 'Non-Fiction', 'Literary works based on facts and real events'),
+('G003', 'Reference', 'Books like dictionaries, encyclopedias, not usually for loan'),
+('G004', 'Student Project', 'Academic projects or theses by students'),
+('G005', 'Science', 'Books related to scientific studies and discoveries'),
+('G006', 'Technology', 'Books covering technical and IT subjects'),
+('G007', 'History', 'Books discussing historical events and figures'),
+('G008', 'Biography', 'Books telling the life stories of individuals'),
+('G009', 'Children', 'Books intended for young readers');
+/*=========================================================================================================*/
+
+--Insert Data into Tag Table
+INSERT INTO Tag (Tag_ID, tag_name, fine_rate, loan_period, loanable_status)
+VALUES
+('T001', 'Yellow', 2.00, 14, 'loanable'),
+('T002', 'Red', 3.00, 7, 'non loanable'),
+('T003', 'Green', 1.00, 21, 'loanable');
+/*=========================================================================================================*/
+
+--Insert Data into AgeSuggestion Table
+INSERT INTO AgeSuggestion (AgeSuggestion_ID, rating_label, min_age, description)
+VALUES
+('AS001', 'All Ages', 0, 'Suitable for all readers, including children'),
+('AS002', 'Children', 7, 'Content suitable for young readers aged 7 and above'),
+('AS003', 'Teen', 13, 'Recommended for teenagers aged 13 and older'),
+('AS004', 'Young Adult', 16, 'Content ideal for young adults aged 16+'),
+('AS005', 'Adult', 18, 'Content intended for mature readers aged 18 and above'),
+('AS006', 'Academic Only', 21, 'Recommended for academic and research purposes, typically university students and staff');
+/*=========================================================================================================*/
+
+--Insert Data into Room Table
+INSERT INTO Room (Room_ID, room_name)
+VALUES
+('R001', 'Presentation Room 1'),
+('R002', 'Presentation Room 2'),
+('R003', 'Presentation Room 3'),
+('R004', 'Presentation Room 4'),
+('R005', 'Presentation Room 5');
+/*=========================================================================================================*/
+
+--Insert Data into RoomDetails Table
+INSERT INTO RoomDetails (Room_ID, room_capacity, room_floor, maintenance_status)
+VALUES
+('R001', 30, 4, 'available'),
+('R002', 25, 4, 'under maintenance'),
+('R003', 40, 4, 'available'),
+('R004', 20, 5, 'closed'),
+('R005', 35, 5, 'available');
+/*=========================================================================================================*/
+
+--Insert 20 Student into User Table
+DECLARE @counter INT = 1;
+DECLARE @StuID VARCHAR(10);
+DECLARE @FName VARCHAR(50);
+DECLARE @LName VARCHAR(50);
+DECLARE @DOB DATE;
+DECLARE @Email VARCHAR(100);
+DECLARE @Gender VARCHAR(10);
+DECLARE @Address VARCHAR(255);
+DECLARE @Contact VARCHAR(20);
+DECLARE @AccountStatus VARCHAR(20);
+DECLARE @Program VARCHAR(100);
+DECLARE @Faculty VARCHAR(100);
+DECLARE @EnrollmentDate DATE;
+DECLARE @CGPA DECIMAL(3,2);
+
+WHILE @counter <= 20
+BEGIN
+    SET @StuID = 'U' + RIGHT('0000' + CAST(@counter AS VARCHAR), 4);
+    SET @FName = 'Student_' + CAST(@counter AS VARCHAR);
+    SET @LName = 'APU_' + CAST(@counter AS VARCHAR);
+    SET @DOB = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 8000), GETDATE());
+    SET @Email = LOWER(@FName + @LName + '@mail.com');
+    SET @Gender = CASE WHEN @counter % 3 = 0 THEN 'male' WHEN @counter % 3 = 1 THEN 'female' ELSE 'other' END;
+    SET @Address = 'Address ' + CAST(@counter AS VARCHAR);
+    SET @Contact = '010' + CAST(1000000 + @counter AS VARCHAR);
+    SET @AccountStatus = CASE WHEN @counter % 50 = 0 THEN 'suspended' ELSE 'active' END;
+
+    INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
+    VALUES (@StuID, @FName, @LName, @DOB, @Contact, @Email, @Gender, @Address, @AccountStatus);
+
+    -- Student Table
+    SET @Program = 'Program ' + CAST((@counter % 5 + 1) AS VARCHAR);
+    SET @Faculty = 'Faculty ' + CAST((@counter % 4 + 1) AS VARCHAR);
+    SET @EnrollmentDate = DATEADD(YEAR, -1 * (ABS(CHECKSUM(NEWID())) % 5), GETDATE());
+    SET @CGPA = ROUND(RAND() * 4.0, 2);
+
+    INSERT INTO Student (User_ID, program, faculty, enrollment_date, CGPA)
+    VALUES (@StuID, @Program, @Faculty, @EnrollmentDate, @CGPA);
+
+    SET @counter = @counter + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert 20 Lecturer into User Table (Staff Table)
+DECLARE @counter1 INT = 21;
+DECLARE @LecID VARCHAR(10);
+DECLARE @LecFName VARCHAR(50);
+DECLARE @LecLName VARCHAR(50);
+DECLARE @LecDOB DATE;
+DECLARE @LecEmail VARCHAR(100);
+DECLARE @LecGender VARCHAR(10);
+DECLARE @LecAddress VARCHAR(255);
+DECLARE @LecContact VARCHAR(20);
+DECLARE @LecAccountStatus VARCHAR(20);
+
+DECLARE @LecStartDate DATE;
+DECLARE @LecSalary DECIMAL(10,2);
+
+DECLARE @Department VARCHAR(100);
+DECLARE @Specialization VARCHAR(100);
+DECLARE @OfficeHour VARCHAR(50);
+DECLARE @OfficeLocation VARCHAR(100);
+
+WHILE @counter1 <= 40
+BEGIN
+    SET @LecID = 'U' + RIGHT('0000' + CAST(@counter1 AS VARCHAR), 4);
+    SET @LecFName = 'Lecturer_' + CAST(@counter1 AS VARCHAR);
+    SET @LecLName = 'APU_' + CAST(@counter1 AS VARCHAR);
+    SET @LecDOB = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 12000), GETDATE());
+    SET @LecEmail = LOWER(@LecFName + @LecLName + '@university.edu');
+    SET @LecGender = CASE WHEN @counter1 % 2 = 0 THEN 'male' ELSE 'female' END;
+    SET @LecAddress = 'Lecturer Address ' + CAST(@counter1 AS VARCHAR);
+    SET @LecContact = '011' + CAST(2000000 + @counter1 AS VARCHAR);
+    SET @LecAccountStatus = 'active';
+
+    INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
+    VALUES (@LecID, @LecFName, @LecLName, @LecDOB, @LecContact, @LecEmail, @LecGender, @LecAddress, @LecAccountStatus);
+
+    -- Staff
+    SET @LecStartDate = DATEADD(YEAR, -1 * (ABS(CHECKSUM(NEWID())) % 20), GETDATE());
+    SET @LecSalary = ROUND(4000 + (RAND() * 3000), 2);
+
+    INSERT INTO Staff (User_ID, start_working_date, salary)
+    VALUES (@LecID, @LecStartDate, @LecSalary);
+
+    -- Lecturer
+    SET @Department = 'Department ' + CAST((@counter1 % 5 + 1) AS VARCHAR);
+    SET @Specialization = 'Specialization ' + CAST((@counter1 % 10 + 1) AS VARCHAR);
+    SET @OfficeHour = 'Mon-Fri 9AM-5PM';
+    SET @OfficeLocation = 'Block ' + CHAR(65 + (@counter1 % 5)) + '-' + CAST((@counter1 % 10 + 1) AS VARCHAR);
+
+    INSERT INTO Lecturer (User_ID, department, specialization, office_hour, office_location)
+    VALUES (@LecID, @Department, @Specialization, @OfficeHour, @OfficeLocation);
+
+    SET @counter1 = @counter1 + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert 20 Librarian into User Table (Staff Table)
+DECLARE @counter2 INT = 41;
+DECLARE @LibID VARCHAR(10);
+DECLARE @LibFName VARCHAR(50);
+DECLARE @LibLName VARCHAR(50);
+DECLARE @LibDOB DATE;
+DECLARE @LibEmail VARCHAR(100);
+DECLARE @LibGender VARCHAR(10);
+DECLARE @LibAddress VARCHAR(255);
+DECLARE @LibContact VARCHAR(20);
+DECLARE @LibAccountStatus VARCHAR(20);
+
+DECLARE @LibStartDate DATE;
+DECLARE @LibSalary DECIMAL(10,2);
+
+DECLARE @ShiftStart TIME;
+DECLARE @ShiftEnd TIME;
+DECLARE @Branch VARCHAR(100);
+DECLARE @Task NVARCHAR(MAX);
+
+WHILE @counter2 <= 60
+BEGIN
+    SET @LibID = 'U' + RIGHT('0000' + CAST(@counter2 AS VARCHAR), 4);
+    SET @LibFName = 'Librarian_' + CAST(@counter2 AS VARCHAR);
+    SET @LibLName = 'APU_' + CAST(@counter2 AS VARCHAR);
+    SET @LibDOB = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 12000), GETDATE());
+    SET @LibEmail = LOWER(@LibFName + @LibLName + '@university.edu');
+    SET @LibGender = CASE WHEN @counter2 % 2 = 0 THEN 'male' ELSE 'female' END;
+    SET @LibAddress = 'Librarian Address ' + CAST(@counter2 AS VARCHAR);
+    SET @LibContact = '012' + CAST(3000000 + @counter2 AS VARCHAR);
+    SET @LibAccountStatus = 'active';
+
+    INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
+    VALUES (@LibID, @LibFName, @LibLName, @LibDOB, @LibContact, @LibEmail, @LibGender, @LibAddress, @LibAccountStatus);
+
+    -- Staff
+    SET @LibStartDate = DATEADD(YEAR, -1 * (ABS(CHECKSUM(NEWID())) % 10), GETDATE());
+    SET @LibSalary = ROUND(2500 + (RAND() * 2000), 2);
+
+    INSERT INTO Staff (User_ID, start_working_date, salary)
+    VALUES (@LibID, @LibStartDate, @LibSalary);
+
+    -- Librarian
+    SET @ShiftStart = '08:00:00';
+    SET @ShiftEnd = '17:00:00';
+    SET @Branch = 'Library Block ' + CHAR(65 + (@counter2 % 5));
+    SET @Task = 'Assist users, manage book circulation and maintain library records.';
+
+    INSERT INTO Librarian (User_ID, shift_starting_time, shift_ending_time, shift_branch, shift_task)
+    VALUES (@LibID, @ShiftStart, @ShiftEnd, @Branch, @Task);
+
+    SET @counter2 = @counter2 + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert 5 Student as Librarians
+DECLARE @studentCounter INT = 1;
+DECLARE @studentUserID VARCHAR(10);
+
+WHILE @studentCounter <= 5
+BEGIN
+    SET @studentUserID = 'U' + RIGHT('0000' + CAST(@studentCounter AS VARCHAR), 4);
+
+    -- Assume these student users already exist
+    -- We just need to make them staff and librarians
+
+    -- Insert as staff
+    INSERT INTO Staff (User_ID, start_working_date, salary)
+    VALUES (@studentUserID, DATEADD(YEAR, -1 * (ABS(CHECKSUM(NEWID())) % 5), GETDATE()), ROUND(1800 + (RAND() * 1200), 2));
+
+    -- Insert as librarian
+    INSERT INTO Librarian (User_ID, shift_starting_time, shift_ending_time, shift_branch, shift_task)
+    VALUES (@studentUserID, '09:00:00', '13:00:00', 'Student Branch A', 'Support library services part-time');
+
+    SET @studentCounter = @studentCounter + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert Data into Author Table
+DECLARE @counter3 INT = 1;
+DECLARE @AuthorID VARCHAR(10);
+DECLARE @AuthorName VARCHAR(100);
+
+WHILE @counter3 <= 5
+BEGIN
+    SET @AuthorID = 'A' + RIGHT('0000' + CAST(@counter3 AS VARCHAR), 4);
+    SET @AuthorName = 'Author_' + CAST(@counter3 AS VARCHAR);
+
+    INSERT INTO Author (Author_ID, author_name)
+    VALUES (@AuthorID, @AuthorName);
+
+    SET @counter3 = @counter3 + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert Data into Book Table
+DECLARE @counter4 INT = 1;
+DECLARE @ISBN VARCHAR(20);
+DECLARE @Title VARCHAR(255);
+DECLARE @GenreID VARCHAR(10);
+DECLARE @AgeID VARCHAR(10);
+DECLARE @TagID VARCHAR(10);
+
+WHILE @counter4 <= 20
+BEGIN
+    SET @ISBN = 'ISBN' + RIGHT('000000000000' + CAST(@counter4 AS VARCHAR), 12);
+    SET @Title = 'Book Title ' + CAST(@counter4 AS VARCHAR);
+
+    -- Rotate GenreID (G001 to G009)
+    SET @GenreID = 'G00' + CAST(((@counter4 - 1) % 9) + 1 AS VARCHAR);
+
+    -- Rotate AgeSuggestion_ID (AS001 to AS006)
+    SET @AgeID = 'AS00' + CAST(((@counter4 - 1) % 6) + 1 AS VARCHAR);
+
+    -- Rotate Tag_ID (T001 to T003)
+    SET @TagID = 'T00' + CAST(((@counter4 - 1) % 3) + 1 AS VARCHAR);
+
+    INSERT INTO Book (ISBN, book_title, Genre_ID, AgeSuggestion_ID, Tag_ID)
+    VALUES (@ISBN, @Title, @GenreID, @AgeID, @TagID);
+
+    SET @counter4 = @counter4 + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert Data into BookDescription Table
+DECLARE @counter5 INT = 1;
+DECLARE @ISBN1 VARCHAR(20);
+DECLARE @Desc NVARCHAR(MAX);  -- Use NVARCHAR(MAX) since TEXT can't be declared
+
+WHILE @counter5 <= 20
+BEGIN
+    SET @ISBN1 = 'ISBN' + RIGHT('000000000000' + CAST(@counter5 AS VARCHAR), 12);
+    SET @Desc = 'This is the description for Book Title ' + CAST(@counter5 AS VARCHAR);
+
+    INSERT INTO BookDescription (ISBN, description)
+    VALUES (@ISBN1, @Desc);
+
+    SET @counter5 = @counter5 + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert Data into BookCopy Table
+DECLARE @counter6 INT = 1;
+DECLARE @BookCopyID VARCHAR(10);
+DECLARE @ISBN2 VARCHAR(20);
+DECLARE @Status VARCHAR(20);
+
+WHILE @counter6 <= 40
+BEGIN
+    SET @BookCopyID = 'BC' + RIGHT('00000' + CAST(@counter6 AS VARCHAR), 5);
+
+    -- Cycle through 20 ISBNs
+    SET @ISBN2 = 'ISBN' + RIGHT('000000000000' + CAST(((@counter6 - 1) % 20) + 1 AS VARCHAR), 12);
+
+    -- Rotate availability status
+    SET @Status = CASE (@counter6 % 3)
+                    WHEN 1 THEN 'Available'
+                    WHEN 2 THEN 'Loaned'
+                    ELSE 'Reserved'
+                  END;
+
+    INSERT INTO BookCopy (BookCopy_ID, ISBN, availability_status)
+    VALUES (@BookCopyID, @ISBN2, @Status);
+
+    SET @counter6 = @counter6 + 1;
+END;
+/*=========================================================================================================*/
+
+--Insert Data into BookAuthor Table
+DECLARE @counter7 INT = 1;
+DECLARE @ISBN3 VARCHAR(20);
+DECLARE @AuthorID1 VARCHAR(10);
+
+WHILE @counter7 <= 30
+BEGIN
+    SET @ISBN3 = 'ISBN' + RIGHT('000000000000' + CAST(@counter7 AS VARCHAR), 12);
+    SET @AuthorID1 = 'A' + RIGHT('0000' + CAST((@counter7 % 5) + 1 AS VARCHAR), 4);
+
+    INSERT INTO BookAuthor (ISBN, Author_ID)
+    VALUES (@ISBN3, @AuthorID1);
+
+    SET @counter7 = @counter7 + 1;
+END;
+--Second pass: add 10 more (random books get 2nd/3rd authors)
+SET @counter7 = 1;
+WHILE @counter7 <= 10
+BEGIN
+    SET @ISBN3 = 'ISBN' + RIGHT('000000000000' + CAST(((@counter7 * 4) % 20 + 1) AS VARCHAR), 12);  -- spread across books
+    SET @AuthorID1 = 'A' + RIGHT('0000' + CAST(((1234 + @counter7) % 5 + 1) AS VARCHAR), 4);
+
+    -- Ensure no duplicate (optional safety)
+    IF NOT EXISTS (
+        SELECT 1 FROM BookAuthor WHERE ISBN = @ISBN3 AND Author_ID = @AuthorID1
+    )
+    BEGIN
+        INSERT INTO BookAuthor (ISBN, Author_ID)
+        VALUES (@ISBN3, @AuthorID1);
+    END
+
+    SET @counter7 = @counter7 + 1;
+END;
+/*=========================================================================================================*/
+
+--
+
+
+
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
 --       ____   _                         _     ____                              _                        --
 --      / ___| | |_  ___   _ __  ___   __| |   |  _ \  _ __  ___    ___  ___   __| | _   _  _ __  ___      --
 --      \___ \ | __|/ _ \ | '__|/ _ \ / _` |   | |_) || '__|/ _ \  / __|/ _ \ / _` || | | || '__|/ _ \     --
@@ -349,7 +742,6 @@ GO
 /*=========================================================================================================*/
 
 -- SP2 -- Invoke Trigger 2
-
 GO
 CREATE PROCEDURE SP_Return_Book
     @Loan_ID INT,
@@ -368,7 +760,7 @@ BEGIN
     DECLARE @fine_amount DECIMAL(10, 2);
 
     -- Get loan details
-    SELECT 
+    SELECT
         @BookCopy_ID = BookCopy_ID,
         @loan_created_date = loan_created_date
     FROM Loan
@@ -385,7 +777,7 @@ BEGIN
     WHERE ISBN = @ISBN;
 
     -- Get loan_period and fine_rate from Tag
-    SELECT 
+    SELECT
         @loan_period = loan_period,
         @fine_rate = fine_rate
     FROM Tag
@@ -396,7 +788,7 @@ BEGIN
     IF @overdue_days < 0
         SET @overdue_days = 0;
 
-    -- Calculate fine
+    -- Calculate fine Formula = Overdue * Rate
     SET @fine_amount = @overdue_days * @fine_rate;
 
     -- Update Loan with return_date and fine
@@ -466,7 +858,7 @@ END;
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
--- Invoke after SP1
+-- Invoke after SP1 （Ronald)
 GO
 CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
 ON Loan
@@ -484,7 +876,7 @@ END;
 GO
 /*=========================================================================================================*/
 
--- Invoke after SP2
+-- Invoke after SP2 (Bryan)
 GO
 CREATE TRIGGER TRG_Loan_UPD_SetCopyToAvailable
 ON Loan
@@ -504,7 +896,7 @@ END;
 GO
 /*=========================================================================================================*/
 
--- Invoke after SP3
+-- Invoke after SP3 (JC)
 GO
 CREATE TRIGGER TRG_Reservation_INS_SetExpiryDate
 ON Reservation
@@ -525,12 +917,12 @@ GO
 
 
 -------------------------------------------------------------------------------------------------------------
---            ____    ___   _        ___                                ___   ____                         --
---           / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _    / _ \ |___ \                        --
---           \___ \ | | | || |     | | | || | | | / _ \| '__|| | | |  | | | |  __) |                       --
---            ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| |  | |_| | / __/                        --
---           |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |   \__\_\|_____|                       --
---                                                            |___/                                        --
+--                ____    ___   _        ___                                ___   ____                     --
+--               / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _    / _ \ |___ \                    --
+--               \___ \ | | | || |     | | | || | | | / _ \| '__|| | | |  | | | |  __) |                   --
+--                ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| |  | |_| | / __/                    --
+--               |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |   \__\_\|_____|                   --
+--                                                                |___/                                    --
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
