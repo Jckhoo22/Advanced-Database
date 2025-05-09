@@ -309,7 +309,7 @@ DECLARE @BookCopyID VARCHAR(10);
 DECLARE @ISBN2 VARCHAR(20);
 DECLARE @Status VARCHAR(20);
 
-WHILE @c4 <= 10000
+WHILE @c4 <= 100000
 BEGIN
     SET @BookCopyID = 'BC' + RIGHT('00000' + CAST(@c4 AS VARCHAR), 5);
 
@@ -391,7 +391,7 @@ BEGIN
     -- Random loan date in last 10 years
     SET @LoanDate = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 3650), GETDATE());
 
-    -- Return date 7–30 days after loan date
+    -- Return date 7Â–30 days after loan date
     SET @ReturnDate = DATEADD(DAY, (7 + ABS(CHECKSUM(NEWID())) % 24), @LoanDate);
 
     INSERT INTO Loan (Loan_ID, BookCopy_ID, User_ID, loan_fine_amount, loan_created_date, return_date)
