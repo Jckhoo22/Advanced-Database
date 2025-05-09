@@ -325,7 +325,7 @@ BEGIN
     IF (
         SELECT availability_status 
         FROM BookCopy 
-        WHERE BookCopy_ID = @BookCopy_ID
+        WHERE BookCopy_ID = @BookCopy_ID 
     ) != 'available' 
     BEGIN
         RAISERROR('Book copy is not available.', 16, 1);
