@@ -29,7 +29,7 @@ SELECT * FROM Loan;
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
--- User Access Roles (Librarian) 
+-- User Access Roles (Librarian) (Ronald)
 CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
 
 USE RKB_Library
@@ -55,7 +55,7 @@ GRANT SELECT ON Author TO librarian;
 GRANT SELECT ON Genre TO librarian;
 
 /*=========================================================================================================*/
--- User Access (Student)
+-- User Access (Student) (JC)
 CREATE LOGIN Stud WITH PASSWORD = '1'; -- Create Login to Sql Server
 
 USE RKB_Library
@@ -85,7 +85,7 @@ GRANT SELECT ON Room TO student;
 GRANT SELECT ON RoomDetails TO student;
 
 /*=========================================================================================================*/
--- User Access (Lecturer)
+-- User Access (Lecturer) (Bryan)
 CREATE LOGIN Lect WITH PASSWORD = '1';
 
 USE RKB_Library;
@@ -685,7 +685,7 @@ END;
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
--- SP1 -- Invoke Trigger 1
+-- SP1 -- Invoke Trigger 1 (Ronald)
 GO
 CREATE PROCEDURE SP_Loan_Book
     @User_ID VARCHAR(10),
@@ -741,16 +741,16 @@ END;
 GO
 /*=========================================================================================================*/
 
--- SP2 -- Invoke Trigger 2
+-- SP2 -- Invoke Trigger 2 (Bryan)
 GO
 CREATE PROCEDURE SP_Return_Book
-    @Loan_ID INT,
+    @BookCopy_ID VARCHAR(10),
     @return_date DATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @BookCopy_ID VARCHAR(10);
+    DECLARE @Loan_ID VARCHAR(10);
     DECLARE @loan_created_date DATE;
     DECLARE @ISBN VARCHAR(20);
     DECLARE @Tag_ID VARCHAR(10);
@@ -759,49 +759,60 @@ BEGIN
     DECLARE @overdue_days INT;
     DECLARE @fine_amount DECIMAL(10, 2);
 
-    -- Get loan details
-    SELECT
-        @BookCopy_ID = BookCopy_ID,
-        @loan_created_date = loan_created_date
-    FROM Loan
-    WHERE Loan_ID = @Loan_ID;
+    BEGIN TRANSACTION;
 
-    -- Get ISBN from BookCopy
+    -- Lock the loan row for this BookCopy_ID
+    SELECT TOP 1 
+        @Loan_ID = Loan_ID,
+        @loan_created_date = loan_created_date
+    FROM Loan WITH (ROWLOCK, UPDLOCK)
+    WHERE BookCopy_ID = @BookCopy_ID AND return_date IS NULL;
+
+    IF @Loan_ID IS NULL
+    BEGIN
+        RAISERROR('No active loan found for this book copy.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- Get ISBN
     SELECT @ISBN = ISBN
     FROM BookCopy
     WHERE BookCopy_ID = @BookCopy_ID;
 
-    -- Get Tag_ID from Book
+    -- Get Tag_ID
     SELECT @Tag_ID = Tag_ID
     FROM Book
     WHERE ISBN = @ISBN;
 
-    -- Get loan_period and fine_rate from Tag
-    SELECT
+    -- Get loan rules
+    SELECT 
         @loan_period = loan_period,
         @fine_rate = fine_rate
     FROM Tag
     WHERE Tag_ID = @Tag_ID;
 
-    -- Calculate overdue days
+    -- Compute overdue
     SET @overdue_days = DATEDIFF(DAY, @loan_created_date, @return_date) - @loan_period;
     IF @overdue_days < 0
         SET @overdue_days = 0;
 
-    -- Calculate fine Formula = Overdue * Rate
     SET @fine_amount = @overdue_days * @fine_rate;
 
-    -- Update Loan with return_date and fine
+    -- Update the loan
     UPDATE Loan
     SET 
         return_date = @return_date,
         loan_fine_amount = @fine_amount
     WHERE Loan_ID = @Loan_ID;
+
+    COMMIT TRANSACTION;
 END;
 GO
+
 /*=========================================================================================================*/
 
--- SP3 -- Invoke Trigger 3
+-- SP3 -- Invoke Trigger 3 (JC)
 CREATE PROCEDURE SP_Reserve_Book
     @User_ID VARCHAR(10),
     @BookCopy_ID VARCHAR(10),
