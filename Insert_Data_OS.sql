@@ -303,13 +303,13 @@ END;
 
 
 
---Insert 10,000 Book Copies
+--Insert 40,000 Book Copies
 DECLARE @c4 INT = 1;
 DECLARE @BookCopyID VARCHAR(10);
 DECLARE @ISBN2 VARCHAR(20);
 DECLARE @Status VARCHAR(20);
 
-WHILE @c4 <= 100000
+WHILE @c4 <= 40000
 BEGIN
     SET @BookCopyID = 'BC' + RIGHT('00000' + CAST(@c4 AS VARCHAR), 5);
 
@@ -380,7 +380,7 @@ BEGIN
     SET @LoanID = 'L' + RIGHT('00000' + CAST(@c6 AS VARCHAR), 5);
 
     -- Reuse book copies in rotation
-    SET @BookCopyID1 = 'BC' + RIGHT('00000' + CAST(((@c6 - 1) % 10000 + 1) AS VARCHAR), 5);
+    SET @BookCopyID1 = 'BC' + RIGHT('00000' + CAST(((@c6 - 1) % 40000 + 1) AS VARCHAR), 5);
 
     -- Rotate through 5000 users
     SET @UserID1 = 'U' + RIGHT('0000' + CAST(((@c6 - 1) % 5000 + 1) AS VARCHAR), 4);
@@ -391,7 +391,7 @@ BEGIN
     -- Random loan date in last 10 years
     SET @LoanDate = DATEADD(DAY, -1 * (ABS(CHECKSUM(NEWID())) % 3650), GETDATE());
 
-    -- Return date 730 days after loan date
+    -- Return date 7–30 days after loan date
     SET @ReturnDate = DATEADD(DAY, (7 + ABS(CHECKSUM(NEWID())) % 24), @LoanDate);
 
     INSERT INTO Loan (Loan_ID, BookCopy_ID, User_ID, loan_fine_amount, loan_created_date, return_date)
@@ -399,3 +399,24 @@ BEGIN
 
     SET @c6 = @c6 + 1;
 END;
+
+
+SELECT * FROM [User];
+SELECT * FROM LoginCredentials;
+SELECT * FROM Librarian;
+SELECT * FROM Staff;
+SELECT * FROM Lecturer;
+SELECT * FROM Student;
+SELECT * FROM Book;
+SELECT * FROM BookDescription;
+SELECT * FROM Author;
+SELECT * FROM Genre;
+SELECT * FROM Tag;
+SELECT * FROM AgeSuggestion;
+SELECT * FROM BookAuthor;
+SELECT * FROM BookCopy;
+SELECT * FROM Room;
+SELECT * FROM RoomDetails;
+SELECT * FROM RoomBooking;
+SELECT * FROM Reservation;
+SELECT * FROM Loan;
