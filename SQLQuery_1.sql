@@ -848,7 +848,6 @@ GO
 /*=========================================================================================================*/
 
 -- SP2 -- Invoke Trigger 2 (Bryan)
-GO
 CREATE PROCEDURE SP_Return_Book
     @BookCopy_ID VARCHAR(10),
     @return_date DATE
@@ -856,63 +855,182 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Loan_ID VARCHAR(10);
+    DECLARE @Result INT;
     DECLARE @loan_created_date DATE;
-    DECLARE @ISBN VARCHAR(20);
-    DECLARE @Tag_ID VARCHAR(10);
     DECLARE @loan_period INT;
-    DECLARE @fine_rate DECIMAL(10, 2);
-    DECLARE @overdue_days INT;
-    DECLARE @fine_amount DECIMAL(10, 2);
+    DECLARE @fine_rate DECIMAL(10,2);
+    DECLARE @fine_amount DECIMAL(10,2);
 
     BEGIN TRANSACTION;
 
-    -- Lock the loan row for this BookCopy_ID
-    SELECT TOP 1 
-        @Loan_ID = Loan_ID,
-        @loan_created_date = loan_created_date
-    FROM Loan WITH (ROWLOCK, UPDLOCK)
-    WHERE BookCopy_ID = @BookCopy_ID AND return_date IS NULL;
+    -- Step 1: Lock BookCopy
+    SELECT 1
+    FROM BookCopy WITH (UPDLOCK, HOLDLOCK)
+    WHERE BookCopy_ID = @BookCopy_ID;
 
-    IF @Loan_ID IS NULL
+    -- Step 2: Get loan_created_date
+    EXEC @Result = SP_Get_Loan_Details @BookCopy_ID, @loan_created_date OUTPUT;
+    IF @Result = 1
     BEGIN
-        RAISERROR('No active loan found for this book copy.', 16, 1);
+        RAISERROR('Failed to get loan details.', 16, 1);
         ROLLBACK TRANSACTION;
         RETURN;
     END
 
-    -- Get ISBN
+    -- Step 3: Get loan_period and fine_rate
+    EXEC @Result = SP_Get_Loan_Parameters @BookCopy_ID, @loan_period OUTPUT, @fine_rate OUTPUT;
+    IF @Result != 0
+    BEGIN
+        RAISERROR('Failed to get loan parameters.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- Step 4: Calculate fine
+    EXEC @Result = SP_Calculate_Fine @loan_created_date, @return_date, @loan_period, @fine_rate, @fine_amount OUTPUT;
+    IF @Result != 0
+    BEGIN
+        RAISERROR('Failed to calculate fine.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- Step 5: Update Loan record
+    EXEC @Result = SP_Update_Loan_Fine @BookCopy_ID, @return_date, @fine_amount;
+    IF @Result = 5
+    BEGIN
+        RAISERROR('Failed to update loan record.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    COMMIT TRANSACTION;
+    RETURN 0; -- Success
+END;
+GO
+
+
+CREATE PROCEDURE SP_Get_Loan_Details
+    @BookCopy_ID VARCHAR(10),
+    @loan_created_date DATE OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+
+    SELECT TOP 1 @loan_created_date = loan_created_date
+    FROM Loan WITH (UPDLOCK, HOLDLOCK)
+    WHERE BookCopy_ID = @BookCopy_ID AND return_date IS NULL;
+
+    IF @loan_created_date IS NULL
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN 1; -- Loan not found
+    END
+
+    COMMIT TRANSACTION;
+    RETURN 0; -- Success
+END;
+GO
+
+
+CREATE PROCEDURE SP_Get_Loan_Parameters
+    @BookCopy_ID VARCHAR(10),
+    @loan_period INT OUTPUT,
+    @fine_rate DECIMAL(10,2) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ISBN VARCHAR(20), @Tag_ID VARCHAR(10);
+
+    BEGIN TRANSACTION;
+
     SELECT @ISBN = ISBN
-    FROM BookCopy
+    FROM BookCopy WITH (UPDLOCK, HOLDLOCK)
     WHERE BookCopy_ID = @BookCopy_ID;
 
-    -- Get Tag_ID
+    IF @ISBN IS NULL
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN 2; -- BookCopy not found
+    END
+
     SELECT @Tag_ID = Tag_ID
-    FROM Book
+    FROM Book WITH (UPDLOCK, HOLDLOCK)
     WHERE ISBN = @ISBN;
 
-    -- Get loan rules
-    SELECT 
-        @loan_period = loan_period,
-        @fine_rate = fine_rate
-    FROM Tag
+    IF @Tag_ID IS NULL
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN 3; -- Book not found
+    END
+
+    SELECT @loan_period = loan_period,
+           @fine_rate = fine_rate
+    FROM Tag WITH (UPDLOCK, HOLDLOCK)
     WHERE Tag_ID = @Tag_ID;
 
-    -- Compute overdue
+    IF @loan_period IS NULL OR @fine_rate IS NULL
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN 4; -- Tag not found or missing values
+    END
+
+    COMMIT TRANSACTION;
+    RETURN 0; -- Success
+END;
+GO
+
+
+CREATE PROCEDURE SP_Calculate_Fine
+    @loan_created_date DATE,
+    @return_date DATE,
+    @loan_period INT,
+    @fine_rate DECIMAL(10,2),
+    @fine_amount DECIMAL(10,2) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @overdue_days INT;
+
     SET @overdue_days = DATEDIFF(DAY, @loan_created_date, @return_date) - @loan_period;
-    IF @overdue_days < 0
-        SET @overdue_days = 0;
+
+    IF @overdue_days < 0 SET @overdue_days = 0;
 
     SET @fine_amount = @overdue_days * @fine_rate;
 
-    -- Update the loan
-    UPDATE Loan
+    RETURN 0; -- Success
+END;
+GO
+
+
+CREATE PROCEDURE SP_Update_Loan_Fine
+    @BookCopy_ID VARCHAR(10),
+    @return_date DATE,
+    @fine_amount DECIMAL(10,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+
+    UPDATE Loan WITH (UPDLOCK, HOLDLOCK)
     SET 
         return_date = @return_date,
         loan_fine_amount = @fine_amount
-    WHERE Loan_ID = @Loan_ID;
+    WHERE BookCopy_ID = @BookCopy_ID AND return_date IS NULL;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        ROLLBACK TRANSACTION;
+        RETURN 5; -- Update failed (loan not found or already returned)
+    END
 
     COMMIT TRANSACTION;
+    RETURN 0; -- Success
 END;
 GO
 
