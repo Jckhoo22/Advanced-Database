@@ -1,5 +1,14 @@
+-------------------------------------------------------------------------------------------------------------
+ --   ____          _          _                            ____                    _    _                 --
+ --  |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __    --
+ --  | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \   --
+ --  | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |  --
+ --  |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|  --
+ --                                                                                                        --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
 CREATE TABLE [User] (
-    User_ID INT PRIMARY KEY,
+    User_ID VARCHAR(10) PRIMARY KEY,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
     date_of_birth DATE,
@@ -9,146 +18,165 @@ CREATE TABLE [User] (
     address VARCHAR(255),
     account_status VARCHAR(20) CHECK (account_status IN ('active', 'suspended', 'terminated')) -- For Achieving Enum Status
 );
+/*=========================================================================================================*/
 
 CREATE TABLE LoginCredentials (
-    User_ID INT PRIMARY KEY,
+    User_ID VARCHAR(10) PRIMARY KEY,
     username VARCHAR(50) UNIQUE,
     password VARCHAR(100),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Student (
-    User_ID INT PRIMARY KEY,
+    User_ID VARCHAR(10) PRIMARY KEY,
     program VARCHAR(100),
     faculty VARCHAR(100),
     enrollment_date DATE,
     CGPA DECIMAL(3,2) CHECK (CGPA >= 0 AND CGPA <= 4), -- Check Between 0 and 4 and conditional 3 digits max & 2 decimals max
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Staff (
-    User_ID INT PRIMARY KEY,
+    User_ID VARCHAR(10) PRIMARY KEY,
     start_working_date DATE,
     salary DECIMAL(10,2) CHECK (salary >= 0), 
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Librarian (
-    User_ID INT PRIMARY KEY,
+    User_ID VARCHAR(10) PRIMARY KEY,
     shift_starting_time TIME,
     shift_ending_time TIME,
     shift_branch VARCHAR(100),
     shift_task TEXT, -- description based use Text just in case too long
     FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Lecturer (
-    User_ID INT PRIMARY KEY,
+    User_ID VARCHAR(10) PRIMARY KEY,
     department VARCHAR(100),
     specialization VARCHAR(100),
     office_hour VARCHAR(50),
     office_location VARCHAR(100),
     FOREIGN KEY (User_ID) REFERENCES Staff(User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE AgeSuggestion (
-    AgeSuggestion_ID INT PRIMARY KEY,
+    AgeSuggestion_ID VARCHAR(10) PRIMARY KEY,
     rating_label VARCHAR(50),
     min_age INT,
     description TEXT -- description based use Text just in case too long
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Genre (
-    Genre_ID INT PRIMARY KEY,
+    Genre_ID VARCHAR(10) PRIMARY KEY,
     genre_name VARCHAR(100),
     genre_description TEXT -- description based use Text just in case too long
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Tag (
-    Tag_ID INT PRIMARY KEY,
+    Tag_ID VARCHAR(10) PRIMARY KEY,
     tag_name VARCHAR(50),
     fine_rate DECIMAL(5,2),
     loan_period INT,
     loanable_status VARCHAR(20) CHECK (loanable_status IN ('loanable', 'non loanable'))
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Book (
     ISBN VARCHAR(20) PRIMARY KEY,
     book_title VARCHAR(255),
-    Genre_ID INT,
-    AgeSuggestion_ID INT,
-    Tag_ID INT,
+    Genre_ID VARCHAR(10),
+    AgeSuggestion_ID VARCHAR(10),
+    Tag_ID VARCHAR(10),
     FOREIGN KEY (Genre_ID) REFERENCES Genre(Genre_ID),
     FOREIGN KEY (AgeSuggestion_ID) REFERENCES AgeSuggestion(AgeSuggestion_ID),
     FOREIGN KEY (Tag_ID) REFERENCES Tag(Tag_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE BookDescription (
     ISBN VARCHAR(20) PRIMARY KEY,
     description TEXT,
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Author (
-    Author_ID INT PRIMARY KEY,
+    Author_ID VARCHAR(10) PRIMARY KEY,
     author_name VARCHAR(100)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE BookAuthor (
     ISBN VARCHAR(20),
-    Author_ID INT,
+    Author_ID VARCHAR(10),
     PRIMARY KEY (ISBN, Author_ID),
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN),
     FOREIGN KEY (Author_ID) REFERENCES Author(Author_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE BookCopy (
-    BookCopy_ID INT PRIMARY KEY,
+    BookCopy_ID VARCHAR(10) PRIMARY KEY,
     ISBN VARCHAR(20),
-    availability_status VARCHAR(20) CHECK (availability_status IN ('Available', 'Loaned', 'Reserved', 'Lost')), -- Store Reservation & Loan Status
+    availability_status VARCHAR(20) CHECK (availability_status IN ('Available', 'Loaned', 'Reserved')), -- Store Reservation & Loan Status
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Loan (
-    Loan_ID INT PRIMARY KEY,
-    BookCopy_ID INT,
-    User_ID INT,
+    Loan_ID VARCHAR(10) PRIMARY KEY,
+    BookCopy_ID VARCHAR(10),
+    User_ID VARCHAR(10),
     loan_fine_amount DECIMAL(6,2) CHECK (loan_fine_amount >= 0), -- max 6 digits so can be up to thousand (e.g. Rm9999.99)
     loan_created_date DATE,
     return_date DATE,
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Reservation (
-    Reservation_ID INT PRIMARY KEY,
-    BookCopy_ID INT,
-    User_ID INT,
+    Reservation_ID VARCHAR(10) PRIMARY KEY,
+    BookCopy_ID VARCHAR(10),
+    User_ID VARCHAR(10),
     reservation_created_date DATE,
     expiry_date DATE,
     FOREIGN KEY (BookCopy_ID) REFERENCES BookCopy(BookCopy_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE Room (
-    Room_ID INT PRIMARY KEY,
+    Room_ID VARCHAR(10) PRIMARY KEY,
     room_name VARCHAR(100)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE RoomDetails (
-    Room_ID INT PRIMARY KEY,
+    Room_ID VARCHAR(10) PRIMARY KEY,
     room_capacity INT,
     room_floor INT,
     maintenance_status VARCHAR(20) CHECK (maintenance_status IN ('available', 'under maintenance', 'closed')),
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
 );
+/*=========================================================================================================*/
 
 CREATE TABLE RoomBooking (
-    RoomBooking_ID INT PRIMARY KEY,
-    Room_ID INT,
-    User_ID INT,
+    RoomBooking_ID VARCHAR(10) PRIMARY KEY,
+    Room_ID VARCHAR(10),
+    User_ID VARCHAR(10),
     room_booking_created_time DATETIME,
     end_time DATETIME,
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID),
     FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
 );
+/*=========================================================================================================*/
