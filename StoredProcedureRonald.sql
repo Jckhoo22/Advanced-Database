@@ -1,3 +1,7 @@
+use RKB_Library;
+
+GO
+
 -- SP1
 CREATE PROCEDURE SP_Loan_Book
     @User_ID VarChar(50),
@@ -28,13 +32,17 @@ BEGIN
         RETURN;
     END
 
-    -- Check if the book is loanable via its Tag
+    -- Check if the book is loanable or user is a Lecturer
     IF EXISTS (
         SELECT 1
         FROM Book b
         JOIN Tag t ON b.Tag_ID = t.Tag_ID
         JOIN BookCopy bc ON b.ISBN = bc.ISBN
-        WHERE bc.BookCopy_ID = @BookCopy_ID AND t.loanable_status != 'Loanable'
+        WHERE bc.BookCopy_ID = @BookCopy_ID 
+          AND t.loanable_status != 'loanable'
+          AND NOT EXISTS (
+              SELECT 1 FROM Lecturer WHERE User_ID = @User_ID
+          )
     )
     BEGIN
         RAISERROR('Book is not loanable.', 16, 1);
@@ -45,12 +53,13 @@ BEGIN
     INSERT INTO Loan (BookCopy_ID, User_ID, loan_fine_amount, loan_created_date)
     VALUES (@BookCopy_ID, @User_ID, 0, GETDATE());
 
-    -- Update the book copy's availability to 'unavailable'
+    -- Update the book copy's availability to 'loaned'
     UPDATE BookCopy
-    SET availability_status = 'Loaned'
+    SET availability_status = 'loaned'
     WHERE BookCopy_ID = @BookCopy_ID;
 END;
 
+DROP PROCEDURE SP_Loan_Book
 
 -- SP2
 CREATE PROCEDURE SP_Return_Book
@@ -110,7 +119,7 @@ BEGIN
 
     -- Update BookCopy to available
     UPDATE BookCopy
-    SET availability_status = 'Available'
+    SET availability_status = 'available'
     WHERE BookCopy_ID = @BookCopy_ID;
 END;
 
@@ -132,7 +141,7 @@ BEGIN
         SELECT availability_status
         FROM BookCopy
         WHERE BookCopy_ID = @BookCopy_ID
-    ) != 'Loaned'
+    ) != 'loaned'
     BEGIN
         RAISERROR('Book copy is not currently loaned out and cannot be reserved.', 16, 1);
         RETURN;
@@ -159,7 +168,7 @@ BEGIN
 
     -- Update book copy status to reserved
     UPDATE BookCopy
-    SET availability_status = 'Reserved'
+    SET availability_status = 'reserved'
     WHERE BookCopy_ID = @BookCopy_ID;
 END;
 
@@ -200,14 +209,14 @@ BEGIN
         BEGIN
             -- Book is still on loan
             UPDATE BookCopy
-            SET availability_status = 'Loaned'
+            SET availability_status = 'loaned'
             WHERE BookCopy_ID = @BookCopy_ID;
         END
         ELSE
         BEGIN
             -- Book has been returned
             UPDATE BookCopy
-            SET availability_status = 'Available'
+            SET availability_status = 'available'
             WHERE BookCopy_ID = @BookCopy_ID;
         END
 
@@ -261,7 +270,7 @@ BEGIN
     -- 2. Check duration (must not exceed 2 hours)
     SET @DurationInMinutes = DATEDIFF(MINUTE, @room_booking_created_time, @end_time);
 
-    IF @DurationInMinutes > 120
+    IF @DurationInMinutes > 180
     BEGIN
         RAISERROR('Booking duration cannot exceed 2 hours.', 16, 1);
         RETURN;
