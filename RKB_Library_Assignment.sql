@@ -675,7 +675,8 @@ END;
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
 
--- User Access Roles (Librarian) (Ronald)
+-- Ronald Oh Fu Ming
+-- User Access Roles (Librarian) 
 CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
 
 USE RKB_Library
@@ -702,7 +703,9 @@ GRANT SELECT ON Genre TO librarian;
 
 
 /*=========================================================================================================*/
--- User Access (Student) (JC)
+
+-- Khoo Jie Cheng
+-- User Access (Student)
 CREATE LOGIN Stud WITH PASSWORD = '1'; -- Create Login to Sql Server
 
 USE RKB_Library
@@ -734,7 +737,9 @@ GRANT SELECT ON RoomDetails TO student;
 -- GRANT STORED PROCEDURE
 GRANT EXECUTE ON SP_Reserve_Book TO student;
 /*=========================================================================================================*/
--- User Access (Lecturer) (Bryan)
+
+-- Bryan Tee Ming Jun
+-- User Access (Lecturer)
 CREATE LOGIN Lect WITH PASSWORD = '1';
 
 USE RKB_Library;
@@ -1008,7 +1013,8 @@ DROP TABLE RoomBooking;
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
 
--- SP1 -- Invoke Trigger 1 (Ronald)
+-- Ronald Oh Fu Ming
+-- SP1 -- Invoke Trigger 1
 GO
 CREATE PROCEDURE SP_Loan_Book -- Take 2 Parameter
     @User_ID VARCHAR(10),
@@ -1068,7 +1074,8 @@ END;
 GO
 /*=========================================================================================================*/
 
--- SP2 -- Invoke Trigger 2 (Bryan)
+-- Bryan Tee Ming Jun
+-- SP2 -- Invoke Trigger 2
 CREATE PROCEDURE SP_Return_Book
     @BookCopy_ID VARCHAR(10),
     @return_date DATE
@@ -1274,6 +1281,7 @@ EXEC SP_Return_Book
 
 /*=========================================================================================================*/
 
+-- Khoo Jie Cheng
 -- SP3 -- Invoke Trigger 3 with Concurrency Control (Nested SP)
 
 CREATE PROCEDURE SP_Reserve_Book
@@ -1478,7 +1486,8 @@ GO
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
 
--- Invoke after SP1 （Ronald)
+-- Ronald Oh Fu Ming
+-- Invoke after SP1
 
 GO
 CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
@@ -1497,7 +1506,8 @@ END;
 GO
 /*=========================================================================================================*/
 
--- Invoke after SP2 (Bryan)
+--Bryan Tee Ming Jun
+-- Invoke after SP2
 GO
 CREATE TRIGGER TRG_Loan_UPD_SetCopyToAvailable
 ON Loan
@@ -1517,7 +1527,8 @@ END;
 GO
 /*=========================================================================================================*/
 
--- Invoke after SP3 (JC)
+-- Khoo Jie Cheng
+-- Invoke after SP3
 GO
 CREATE TRIGGER TRG_Reservation_INS_SetExpiryDate
 ON Reservation
