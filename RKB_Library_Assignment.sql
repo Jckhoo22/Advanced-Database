@@ -731,6 +731,8 @@ GRANT SELECT, INSERT ON RoomBooking TO student;
 GRANT SELECT ON Room TO student;
 GRANT SELECT ON RoomDetails TO student;
 
+-- GRANT STORED PROCEDURE
+GRANT EXECUTE ON SP_Reserve_Book TO student;
 /*=========================================================================================================*/
 -- User Access (Lecturer) (Bryan)
 CREATE LOGIN Lect WITH PASSWORD = '1';
