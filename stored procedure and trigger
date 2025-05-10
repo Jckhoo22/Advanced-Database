@@ -1,4 +1,5 @@
 -- SP3 -- Invoke Trigger 3 with Concurrency Control (Nested SP)
+
 CREATE PROCEDURE SP_Reserve_Book
     @User_ID VARCHAR(10),
     @BookCopy_ID VARCHAR(10),
@@ -35,13 +36,23 @@ BEGIN
     END
 
     -- Step 3: Insert reservation
+IF @Result = 0
+BEGIN
     EXEC @Result = SP_Insert_Reservation_Record @User_ID, @BookCopy_ID, @reservation_created_date;
-    IF @Result = 3
+
+    IF @Result != 0
     BEGIN
         RAISERROR('Failed to insert reservation.', 16, 1);
         ROLLBACK TRANSACTION;
         RETURN;
     END
+END
+ELSE
+BEGIN
+    RAISERROR('User already has an active reservation for this book.', 16, 1);
+    ROLLBACK TRANSACTION;
+    RETURN;
+END
 
     -- Step 4: Update book copy status
     EXEC @Result = SP_Update_BookCopy_Status_Reserved @BookCopy_ID;
@@ -66,14 +77,14 @@ BEGIN
     FROM BookCopy
     WHERE BookCopy_ID = @BookCopy_ID;
 
-    IF @status IS NULL OR @status = 'reserved' OR @status != 'loaned'
+    IF @status IN ('loaned', 'reserved')
         RETURN 1;
-    -- Invalid
 
-    RETURN 0;
--- Valid
+    RETURN 0;   
 END;
 GO
+
+
 
 CREATE PROCEDURE SP_Check_User_Already_Reserved_Book
     @User_ID VARCHAR(10),
@@ -114,7 +125,6 @@ BEGIN
     DECLARE @LastID VARCHAR(10);
     DECLARE @NewNum INT;
     DECLARE @NewID VARCHAR(10);
-
     BEGIN TRY
         -- Lock the Reservation table to prevent ID collision
         SELECT TOP 1
@@ -179,56 +189,9 @@ END;
 GO
 
 
+-- // ----------------------------------------------------------------------
 
 
-
- /*
-  _____       _                           
- |_   _|_ __ (_)  __ _   __ _   ___  _ __ 
-   | | | '__|| | / _` | / _` | / _ \| '__|
-   | | | |   | || (_| || (_| ||  __/| |   
-   |_| |_|   |_| \__, | \__, | \___||_|   
-                 |___/  |___/             
- */
-
--- Invoke after SP1 where Trigger activated by SP_Loan_Book and any direct Loan insert
-
-GO
-CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
-ON Loan
-AFTER INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Update BookCopy availability to 'Loaned' after loan is inserted
-    UPDATE bc
-    SET bc.availability_status = 'loaned'
-    FROM BookCopy bc
-        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
-END;
-GO
-
--- Invoke after SP2
-GO
-CREATE TRIGGER TRG_Loan_UPD_SetCopyToAvailable
-ON Loan
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Update BookCopy to 'Available' when return_date is set
-    UPDATE bc
-    SET bc.availability_status = 'available'
-    FROM BookCopy bc
-        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id
-        JOIN deleted d ON i.loan_id = d.loan_id
-    WHERE i.return_date IS NOT NULL AND d.return_date IS NULL;
-END;
-GO
-
--- Invoke after SP3 (Run as atomic after the SP) JC 
 GO
 CREATE TRIGGER TRG_Reservation_INS_SetExpiryDate
 ON Reservation
@@ -241,6 +204,6 @@ BEGIN
     UPDATE r
     SET r.expiry_date = DATEADD(DAY, 3, i.reservation_created_date)
     FROM Reservation r
-        JOIN inserted i ON r.reservation_id = i.reservation_id;
+    JOIN inserted i ON r.reservation_id = i.reservation_id;
 END;
 GO
