@@ -6,17 +6,17 @@ USE RKB_Library;
 Select * From Loan;
 
 INSERT INTO Loan (Loan_ID, BookCopy_ID, User_ID, loan_fine_amount, loan_created_date, return_date) VALUES
-('L0045', 'BC029', 'U001', 0.00, '2025-05-01', NULL);
+('L0046', 'BC001', 'U020', 0.00, '2025-05-01', NULL);
 
 UPDATE Loan
 SET return_date = '2025-05-03', loan_fine_amount = 50
-WHERE User_ID = 'U001' AND BookCopy_ID = 'BC029';
+WHERE User_ID = 'U020' AND BookCopy_ID = 'BC001';
 
 -- For handling and managing reservations
 SELECT * FROM Reservation;
 
 UPDATE Reservation
-SET BookCopy_ID = 'BC027', User_ID = 'U001', reservation_created_date = '2025-05-05' 
+SET BookCopy_ID = 'BC002', User_ID = 'U003', reservation_created_date = '2025-05-10' 
 WHERE Reservation_ID = 'R001';
 
 -- For updating real-time book status on book copy
@@ -55,4 +55,12 @@ UPDATE RoomBooking
 SET room_booking_created_time = '2025-05-01 09:00:00.000', end_time = '2025-05-01 11:00:00.000'
 WHERE RoomBooking_ID = 'RB001';
 
+Delete From Room where Room_ID = 'RM01';
+
+Update Room 
+SET room_name = 'Science room'
+where Room_ID = 'RM01';
+
+INSERT INTO Room (Room_ID, room_name) VALUES
+('RM072', 'Science room');
 

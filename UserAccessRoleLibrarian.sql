@@ -30,3 +30,4 @@ GRANT SELECT ON RoomDetails to librarian;
 
 -- For allowing the librarian to edit student room booking
 GRANT SELECT, UPDATE ON RoomBooking to librarian;
+

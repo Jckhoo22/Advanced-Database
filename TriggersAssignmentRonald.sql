@@ -34,10 +34,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Update BookCopy availability to 'Loaned' after loan is inserted
+    -- Update BookCopy availability to 'loaned' after a new loan is inserted
     UPDATE bc
     SET bc.availability_status = 'loaned'
     FROM BookCopy bc
-        JOIN inserted i ON bc.bookcopy_id = i.bookcopy_id;
+    INNER JOIN inserted i ON bc.BookCopy_ID = i.BookCopy_ID
+	WHERE bc.availability_status != 'loaned';
 END;
 GO

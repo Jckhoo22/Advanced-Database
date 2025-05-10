@@ -330,7 +330,7 @@
 --END;
 
 -- Stored Procedure Ronald
-use RKB_Library;
+use RKB_Library_Test;
 GO
 CREATE PROCEDURE SP_Loan_Book -- Take 2 Parameter
     @User_ID VARCHAR(10),
@@ -338,6 +338,17 @@ CREATE PROCEDURE SP_Loan_Book -- Take 2 Parameter
 AS
 BEGIN
     SET NOCOUNT ON;
+
+	-- Check the book copy if it is available
+	IF EXISTS (
+        SELECT 1
+        FROM BookCopy
+        WHERE BookCopy_ID = @BookCopy_ID AND availability_status != 'available'
+    )
+    BEGIN
+        RAISERROR('This book copy is not available for loan.', 16, 1);
+        RETURN;
+    END
 
     -- Check tag loanable status
     IF EXISTS (
@@ -368,7 +379,7 @@ BEGIN
     WHERE Loan_ID LIKE 'L[0-9]%';
 
     -- Increment and format as L### (e.g., L001)
-    SET @NewLoanID = 'L' + RIGHT('000' + CAST(@MaxLoanNumber + 1 AS VARCHAR(9)), 3);
+    SET @NewLoanID = 'L' + RIGHT('0000' + CAST(@MaxLoanNumber + 1 AS VARCHAR(9)), 4);
 
     INSERT INTO Loan
         (Loan_ID, BookCopy_ID, User_ID, loan_fine_amount, loan_created_date, return_date)
@@ -378,7 +389,10 @@ BEGIN
 END;
 GO
 
-EXEC SP_Loan_Book @User_ID = 'U002', @BookCopy_ID = 'BC023';
+EXEC SP_Loan_Book @User_ID = 'U0003', @BookCopy_ID = 'BC00016';
 
 Select * From Loan 
-Where User_ID = 'U002'
+Where User_ID = 'U0003'
+
+Select * From BookCopy 
+Where BookCopy_ID = 'BC00016'
