@@ -1,0 +1,143 @@
+-- Optimization
+Create Database RKB_Optimization
+
+USE RKB_Optimization
+
+/*
+CREATE TABLE [User] (
+    User_ID VARCHAR(10) PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    date_of_birth DATE,
+    contact_number VARCHAR(20),
+    email VARCHAR(100),
+    gender VARCHAR(10),
+    address VARCHAR(255),
+    account_status VARCHAR(20)
+);
+
+CREATE TABLE LoginCredentials (
+    User_ID VARCHAR(10) PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(100),
+    FOREIGN KEY (User_ID) REFERENCES [User](User_ID)
+);
+
+-- Step 1: Looping for 100,000 inserts
+DECLARE @i INT = 1;
+
+WHILE @i <= 100000
+BEGIN
+    DECLARE @UserID VARCHAR(10) = CONCAT('U', FORMAT(@i, 'D5'));
+    DECLARE @FName VARCHAR(50) = CONCAT('First', @i);
+    DECLARE @LName VARCHAR(50) = CONCAT('Last', @i);
+    DECLARE @DOB DATE = DATEADD(DAY, -@i % 10000, '2000-01-01');
+    DECLARE @Contact VARCHAR(20) = CONCAT('01', FORMAT(@i % 10000000, '00000000'));
+    DECLARE @Email VARCHAR(100) = CONCAT('user', @i, '@example.com');
+    DECLARE @Gender VARCHAR(10) = CASE WHEN @i % 2 = 0 THEN 'male' ELSE 'female' END;
+    DECLARE @Address VARCHAR(255) = CONCAT('Address ', @i);
+    DECLARE @Status VARCHAR(20) = 'active';
+
+    -- Insert into User table
+    INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
+    VALUES (@UserID, @FName, @LName, @DOB, @Contact, @Email, @Gender, @Address, @Status);
+
+    -- Insert into LoginCredentials
+    INSERT INTO LoginCredentials (User_ID, username, password)
+    VALUES (@UserID, CONCAT('user', @i), '123456');
+
+    SET @i += 1;
+END
+
+DECLARE @i INT = 100001;
+
+WHILE @i <= 200000
+BEGIN
+    DECLARE @UserID VARCHAR(10) = CONCAT('U', FORMAT(@i, 'D6'));
+    DECLARE @FName VARCHAR(50) = CONCAT('First', @i);
+    DECLARE @LName VARCHAR(50) = CONCAT('Last', @i);
+    DECLARE @DOB DATE = DATEADD(DAY, -@i % 10000, '2000-01-01');
+    DECLARE @Contact VARCHAR(20) = CONCAT('01', FORMAT(@i % 10000000, '00000000'));
+    DECLARE @Email VARCHAR(100) = CONCAT('user', @i, '@example.com');
+    DECLARE @Gender VARCHAR(10) = CASE WHEN @i % 2 = 0 THEN 'male' ELSE 'female' END;
+    DECLARE @Address VARCHAR(255) = CONCAT('Address ', @i);
+    DECLARE @Status VARCHAR(20) = 'active';
+
+    INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
+    VALUES (@UserID, @FName, @LName, @DOB, @Contact, @Email, @Gender, @Address, @Status);
+
+    INSERT INTO LoginCredentials (User_ID, username, password)
+    VALUES (@UserID, CONCAT('user', @i), '123456');
+
+    SET @i += 1;
+END
+
+DECLARE @i INT = 200001;
+
+WHILE @i <= 300000
+BEGIN
+    DECLARE @UserID VARCHAR(10) = CONCAT('U', FORMAT(@i, 'D6'));
+    DECLARE @FName VARCHAR(50) = CONCAT('First', @i);
+    DECLARE @LName VARCHAR(50) = CONCAT('Last', @i);
+    DECLARE @DOB DATE = DATEADD(DAY, -@i % 10000, '2000-01-01');
+    DECLARE @Contact VARCHAR(20) = CONCAT('01', FORMAT(@i % 10000000, '00000000'));
+    DECLARE @Email VARCHAR(100) = CONCAT('user', @i, '@example.com');
+    DECLARE @Gender VARCHAR(10) = CASE WHEN @i % 2 = 0 THEN 'male' ELSE 'female' END;
+    DECLARE @Address VARCHAR(255) = CONCAT('Address ', @i);
+    DECLARE @Status VARCHAR(20) = 'active';
+
+    INSERT INTO [User] (User_ID, first_name, last_name, date_of_birth, contact_number, email, gender, address, account_status)
+    VALUES (@UserID, @FName, @LName, @DOB, @Contact, @Email, @Gender, @Address, @Status);
+
+    INSERT INTO LoginCredentials (User_ID, username, password)
+    VALUES (@UserID, CONCAT('user', @i), '123456');
+
+    SET @i += 1;
+END
+
+SELECT COUNT(*) AS ActiveUsersBornIn1990s
+FROM [User]
+WHERE account_status = 'active'
+  AND date_of_birth BETWEEN '1990-01-01' AND '2000-12-31';
+
+
+
+SELECT * INTO User_Shard1 FROM [User] WHERE 1 = 0;
+SELECT * INTO User_Shard2 FROM [User] WHERE 1 = 0;
+SELECT * INTO User_Shard3 FROM [User] WHERE 1 = 0;
+
+-- Shard 1: User_ID 1 - 100000
+INSERT INTO User_Shard1
+SELECT * FROM [User]
+WHERE CAST(SUBSTRING(User_ID, 2, 6) AS INT) BETWEEN 1 AND 100000;
+
+-- Shard 2: User_ID 100001 - 200000
+INSERT INTO User_Shard2
+SELECT * FROM [User]
+WHERE CAST(SUBSTRING(User_ID, 2, 6) AS INT) BETWEEN 100001 AND 200000;
+
+-- Shard 3: User_ID 200001 - 300000
+INSERT INTO User_Shard3
+SELECT * FROM [User]
+WHERE CAST(SUBSTRING(User_ID, 2, 6) AS INT) BETWEEN 200001 AND 300000;
+
+
+SELECT COUNT(*) AS ActiveUsersBornIn1990s
+FROM (
+    SELECT date_of_birth FROM User_Shard1
+    WHERE account_status = 'active'
+      AND date_of_birth BETWEEN '1990-01-01' AND '2000-12-31'
+
+    UNION ALL
+
+    SELECT date_of_birth FROM User_Shard2
+    WHERE account_status = 'active'
+      AND date_of_birth BETWEEN '1990-01-01' AND '2000-12-31'
+
+    UNION ALL
+
+    SELECT date_of_birth FROM User_Shard3
+    WHERE account_status = 'active'
+      AND date_of_birth BETWEEN '1990-01-01' AND '2000-12-31'
+) AS AllMatches;
+*/
