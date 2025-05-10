@@ -1,1 +1,27 @@
+CREATE LOGIN Stud WITH PASSWORD = '1'; -- Create Login to Sql Server
 
+USE RKB_Library
+
+CREATE USER student FOR LOGIN Stud; -- Create User within that "Stud" Server
+
+-- Access 1: For Student to Search what is the book about
+GRANT SELECT ON Book TO student;
+GRANT SELECT ON BookDescription TO student;
+GRANT SELECT ON Author TO student;
+GRANT SELECT ON Genre TO student;
+
+-- Access 2: For Student to Check Book Availability
+GRANT SELECT ON BookCopy TO student;
+
+-- Access 3: Reserve Books 
+GRANT SELECT, INSERT ON Reservation TO student;
+
+-- Access 4: Student View Own loans
+GRANT SELECT ON Loan TO student;
+
+-- Access 5: For Student to Book Presentation Room
+GRANT SELECT, INSERT ON RoomBooking TO student;
+
+-- Access 6: View room details
+GRANT SELECT ON Room TO student;
+GRANT SELECT ON RoomDetails TO student;
