@@ -130,7 +130,7 @@ CREATE TABLE BookAuthor (
 CREATE TABLE BookCopy (
     BookCopy_ID VARCHAR(10) PRIMARY KEY,
     ISBN VARCHAR(20),
-    availability_status VARCHAR(20) CHECK (availability_status IN ('Available', 'Loaned', 'Reserved')), -- Store Reservation & Loan Status
+    availability_status VARCHAR(20) CHECK (availability_status IN ('available', 'loaned', 'reserved')), -- Store Reservation & Loan Status
     FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
 );
 /*=========================================================================================================*/
