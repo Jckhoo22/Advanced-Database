@@ -717,6 +717,7 @@ GRANT SELECT ON Book TO student;
 GRANT SELECT ON BookDescription TO student;
 GRANT SELECT ON Author TO student;
 GRANT SELECT ON Genre TO student;
+GRANT SELECT ON BookAuthor TO student
 
 -- Access 2: For Student to Check Book Availability
 GRANT SELECT ON BookCopy TO student;
@@ -998,11 +999,44 @@ DROP TABLE RoomBooking;
 /*=========================================================================================================*/
 
 -- Khoo Jie Cheng
+-- Permission Allowed to Reserve Book
+DECLARE @Result INT; 
+DECLARE @Today DATE = GETDATE();
 
+EXEC @Result = SP_Reserve_Book
+    @User_ID = 'U0001',
+    @BookCopy_ID = 'BC00019',
+    @reservation_created_date = @Today;
+
+-- Permission Denied to Update
+UPDATE Loan SET loan_fine_amount = 0 WHERE Loan_ID = 'L0003';
+
+-- Permission Denied to Delete
+DELETE FROM Reservation WHERE Reservation_ID = 'R0009';
+
+-- Permission Allowed to View
+SELECT * FROM Loan WHERE User_ID = 'U0001';
+
+-- Permission Allowed to view the book data
+SELECT 
+    b.book_title,
+    bd.description,
+    g.genre_name,
+    a.author_name
+FROM Book b
+JOIN BookDescription bd ON b.ISBN = bd.ISBN
+JOIN Genre g ON b.Genre_ID = g.Genre_ID
+JOIN BookAuthor ba ON b.ISBN = ba.ISBN
+JOIN Author a ON ba.Author_ID = a.Author_ID;
+
+-- Permission Allowed to view the book status
+SELECT 
+    b.book_title,
+    bc.BookCopy_ID,
+    bc.availability_status
+FROM Book b
+JOIN BookCopy bc ON b.ISBN = bc.ISBN;
 /*=========================================================================================================*/
-
-
-
 -------------------------------------------------------------------------------------------------------------
 --       ____   _                         _     ____                              _                        --
 --      / ___| | |_  ___   _ __  ___   __| |   |  _ \  _ __  ___    ___  ___   __| | _   _  _ __  ___      --
@@ -1367,8 +1401,6 @@ BEGIN
     RETURN 0;   
 END;
 GO
-
-
 
 CREATE PROCEDURE SP_Check_User_Already_Reserved_Book
     @User_ID VARCHAR(10),
