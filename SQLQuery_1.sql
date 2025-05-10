@@ -1038,6 +1038,7 @@ BEGIN
 END;
 GO
 
+-- Testing Store Procedure
 UPDATE Loan
 SET return_date = null
 WHERE BookCopy_ID = 'BC00001';
@@ -1048,7 +1049,6 @@ WHERE BookCopy_ID = 'BC00001';
 
 SELECT * FROM Loan WHERE BookCopy_ID = 'BC00001';
 SELECT * FROM BookCopy WHERE BookCopy_ID = 'BC00001';
-
 
 EXEC SP_Return_Book
 @BookCopy_ID = 'BC00001',
