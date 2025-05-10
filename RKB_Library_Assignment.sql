@@ -1,12 +1,12 @@
 USE RKB_Library;
 
 -------------------------------------------------------------------------------------------------------------
- --   ____          _          _                            ____                    _    _                 --
- --  |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __    --
- --  | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \   --
- --  | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |  --
- --  |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|  --
- --                                                                                                        --
+--    ____          _          _                            ____                    _    _                 --
+--   |  _ \   __ _ | |_  __ _ | |__    __ _  ___   ___     / ___| _ __  ___   __ _ | |_ (_)  ___   _ __    --
+--   | | | | / _` || __|/ _` || '_ \  / _` |/ __| / _ \   | |    | '__|/ _ \ / _` || __|| | / _ \ | '_ \   --
+--   | |_| || (_| || |_| (_| || |_) || (_| |\__ \|  __/   | |___ | |  |  __/| (_| || |_ | || (_) || | | |  --
+--   |____/  \__,_| \__|\__,_||_.__/  \__,_||___/ \___|    \____||_|   \___| \__,_| \__||_| \___/ |_| |_|  --
+--                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
 
@@ -770,6 +770,235 @@ GRANT SELECT ON RoomDetails TO lecturer;
 
 
 -------------------------------------------------------------------------------------------------------------
+--                        _      _  _                        _                                             --
+--                       | |    (_)| |__   _ __  __ _  _ __ (_)  __ _  _ __                                --
+--                       | |    | || '_ \ | '__|/ _` || '__|| | / _` || '_ \                               --
+--                       | |___ | || |_) || |  | (_| || |   | || (_| || | | |                              --
+--                       |_____||_||_.__/ |_|   \__,_||_|   |_| \__,_||_| |_|                              --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+
+-- Ronald Oh Fu Ming
+USE RKB_Library;
+-- For handling loan
+Select * From Loan;
+
+INSERT INTO Loan (Loan_ID, BookCopy_ID, User_ID, loan_fine_amount, loan_created_date, return_date) VALUES
+('L0046', 'BC001', 'U020', 0.00, '2025-05-01', NULL);
+
+UPDATE Loan
+SET return_date = '2025-05-03', loan_fine_amount = 50
+WHERE User_ID = 'U020' AND BookCopy_ID = 'BC001';
+
+-- For handling and managing reservations
+SELECT * FROM Reservation;
+
+UPDATE Reservation
+SET BookCopy_ID = 'BC002', User_ID = 'U003', reservation_created_date = '2025-05-10' 
+WHERE Reservation_ID = 'R001';
+
+-- For updating real-time book status on book copy
+SELECT * FROM BookCopy;
+
+UPDATE BookCopy
+SET availability_status = 'available' 
+WHERE BookCopy_ID = 'BC001';
+
+-- For updating and viewing the book tag
+SELECT * FROM Tag;
+
+UPDATE Tag
+SET loanable_status = 'non loanable', loan_period = 10, fine_rate = 2.0 
+WHERE Tag_ID = 'T001';
+
+-- For displaying all book details
+Select * From Book;
+
+Select * From BookDescription;
+
+Select * From BookAuthor;
+
+Select * From Author;
+
+Select * From Genre;
+
+-- For displaying and showing the room details and the booking information
+Select * From Room
+
+Select * From RoomDetails
+
+Select * From RoomBooking
+
+UPDATE RoomBooking
+SET room_booking_created_time = '2025-05-01 09:00:00.000', end_time = '2025-05-01 11:00:00.000'
+WHERE RoomBooking_ID = 'RB001';
+
+Delete From Room where Room_ID = 'RM01';
+
+Update Room 
+SET room_name = 'Science room'
+where Room_ID = 'RM01';
+
+INSERT INTO Room (Room_ID, room_name) VALUES
+('RM072', 'Science room');
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
+--                              _                 _                                                        --
+--                             | |     ___   ___ | |_  _   _  _ __  ___  _ __                              --
+--                             | |    / _ \ / __|| __|| | | || '__|/ _ \| '__|                             --
+--                             | |___|  __/| (__ | |_ | |_| || |  |  __/| |                                --
+--                             |_____|\___| \___| \__| \__,_||_|   \___||_|                                --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+-- Bryan Tee Ming Jun
+USE RKB_Library;
+--------------------------------------------------------------------------
+--                              Can Be Access                           --
+--------------------------------------------------------------------------
+/*======================================================================*/
+
+-- Lecturer can browse books, view genres, authors, and descriptions
+SELECT * FROM Book;
+SELECT * FROM BookDescription;
+SELECT * FROM BookAuthor;
+SELECT * FROM Author;
+SELECT * FROM Genre;
+
+SELECT 
+    b.ISBN,
+    b.book_title,
+    bd.Description,
+    g.Genre_Name,
+    a.Author_ID,
+    a.Author_Name
+FROM Book b
+JOIN BookDescription bd ON b.ISBN = bd.ISBN
+JOIN Genre g ON b.Genre_ID = g.Genre_ID
+JOIN BookAuthor ba ON b.ISBN = ba.ISBN
+JOIN Author a ON ba.Author_ID = a.Author_ID;
+/*======================================================================*/
+
+-- Lecturer can view copy availability (available, loaned, reserved, etc.)
+SELECT * FROM BookCopy WHERE availability_status = 'available';
+/*======================================================================*/
+
+-- Lecturer  can view Tag details (so they can know which books are reference/non-loanable)
+SELECT 
+	b.ISBN, 
+	t.Tag_ID, 
+	t.tag_name, 
+	t.loanable_status 
+FROM Book b
+JOIN Tag t on t.Tag_ID = b.Tag_ID
+/*======================================================================*/
+
+-- Lecturer can view and make reservation
+SELECT * FROM Reservation;
+INSERT INTO Reservation (Reservation_ID, reservation_created_date)
+VALUES('RS0016', GETDATE());
+/*======================================================================*/
+
+-- Lecturer can view own loan history
+SELECT * FROM Loan WHERE User_ID = 'U0022';
+/*======================================================================*/
+
+-- Lecturer can view room details, room booking status and make booking for a room
+SELECT * FROM Room;
+SELECT * FROM RoomDetails;
+SELECT * FROM RoomBooking;
+
+SELECT 
+	r.Room_ID, 
+	rd.maintenance_status, 
+	rb.RoomBooking_ID, 
+	rb.room_booking_created_time,
+	rb.end_time
+FROM Room r
+JOIN RoomDetails rd ON r.Room_ID = rd.Room_ID
+JOIN RoomBooking rb ON r.Room_ID = rb.Room_ID
+
+INSERT INTO RoomBooking (RoomBooking_ID, room_booking_created_time)
+VALUES ('RB0011', GETDATE());
+/*======================================================================*/
+
+-- Lecturer can view room status and details
+SELECT * FROM Room;
+SELECT * FROM RoomDetails;
+/*======================================================================*/
+
+
+--------------------------------------------------------------------------
+--                            Cannot Be Access                          --
+--------------------------------------------------------------------------
+/*======================================================================*/
+
+-- Lecturer dont have access to update any table data
+UPDATE Book
+SET book_title = 'Cant be change'
+WHERE ISBN = 'ISBN000000000013';
+/*======================================================================*/
+
+-- Lecturer dont have access to view user data
+SELECT 
+    u.User_ID,
+    u.first_name AS User_Name,
+    bc.BookCopy_ID,
+    bc.ISBN,
+    bc.availability_status,
+    l.loan_created_date,
+    l.return_date
+FROM [User] u
+JOIN Loan l ON u.User_ID = l.User_ID
+JOIN BookCopy bc ON l.BookCopy_ID = bc.BookCopy_ID;
+/*======================================================================*/
+
+-- Lecturer cannot add Tag status into Tag table
+Insert INTO Tag (Tag_ID, tag_name, fine_rate, loan_period, loanable_status)
+VALUES('T004', 'Blue', 0.50, 30, 'loanable')
+/*======================================================================*/
+
+-- Lecturer dont have access to delete any table data
+DELETE Reservation
+WHERE Reservation_ID = 'RS0001';
+/*======================================================================*/
+
+-- Lecturer dont have access to delete any data in reservation table
+DELETE Reservation WHERE Reservation_ID = 'RS0016';
+/*======================================================================*/
+
+--Lecturer cannot alter any table
+ALTER TABLE Loan 
+ADD PaymentType VARCHAR(20);
+/*======================================================================*/
+
+-- Lecturer cannot drop any table
+DROP TABLE RoomBooking;
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
+--                               ____   _               _               _                                  --
+--                              / ___| | |_  _   _   __| |  ___  _ __  | |_                                --
+--                              \___ \ | __|| | | | / _` | / _ \| '_ \ | __|                               --
+--                               ___) || |_ | |_| || (_| ||  __/| | | || |_                                --
+--                              |____/  \__| \__,_| \__,_| \___||_| |_| \__|                               --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+
+-- Khoo Jie Cheng
+
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
 --       ____   _                         _     ____                              _                        --
 --      / ___| | |_  ___   _ __  ___   __| |   |  _ \  _ __  ___    ___  ___   __| | _   _  _ __  ___      --
 --      \___ \ | __|/ _ \ | '__|/ _ \ / _` |   | |_) || '__|/ _ \  / __|/ _ \ / _` || | | || '__|/ _ \     --
@@ -1483,7 +1712,156 @@ FROM (
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
 
--- Ronald Oh Fu Ming
+-- Khoo Jie Cheng (Student 1)
+-- Question 1
+SELECT TOP 1 
+    t.tag_name AS Category,
+    COUNT(b.ISBN) AS TotalBooks
+FROM Book b
+JOIN Tag t ON b.Tag_ID = t.Tag_ID
+GROUP BY t.tag_name
+ORDER BY TotalBooks DESC;
+
+-- Question 2
+SELECT b.ISBN, b.book_title
+FROM Book b
+LEFT JOIN BookCopy bc ON b.ISBN = bc.ISBN
+LEFT JOIN Loan l ON bc.BookCopy_ID = l.BookCopy_ID
+WHERE l.BookCopy_ID IS NULL;
+
+
+-- Question 3
+SELECT u.User_ID, u.first_name, u.last_name, COUNT(*) AS TotalLoans
+FROM Loan l
+JOIN [User] u ON l.User_ID = u.User_ID
+GROUP BY u.User_ID, u.first_name, u.last_name
+HAVING COUNT(*) > 2;
+
+-- Question 4
+SELECT 
+    t.tag_name AS Category,
+    g.genre_name AS Genre,
+    COUNT(b.ISBN) AS TotalBooks
+FROM Book b
+JOIN Tag t ON b.Tag_ID = t.Tag_ID
+JOIN Genre g ON b.Genre_ID = g.Genre_ID
+GROUP BY ROLLUP(t.tag_name, g.genre_name);
+
+-- Question 5 
+SELECT 
+    u.User_ID,
+    u.first_name,
+    u.last_name,
+    COUNT(*) AS OverdueLoans,
+    SUM(l.loan_fine_amount) AS TotalFine
+FROM Loan l
+JOIN [User] u ON l.User_ID = u.User_ID
+JOIN BookCopy bc ON l.BookCopy_ID = bc.BookCopy_ID
+JOIN Book b ON bc.ISBN = b.ISBN
+JOIN Tag t ON b.Tag_ID = t.Tag_ID
+WHERE 
+    l.return_date IS NOT NULL AND 
+    l.return_date > DATEADD(DAY, t.loan_period, l.loan_created_date)
+GROUP BY u.User_ID, u.first_name, u.last_name;
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
+--                ____    ___   _        ___                                ___   ____                     --
+--               / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _    / _ \ |___ \                    --
+--               \___ \ | | | || |     | | | || | | | / _ \| '__|| | | |  | | | |  __) |                   --
+--                ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| |  | |_| | / __/                    --
+--               |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |   \__\_\|_____|                   --
+--                                                                |___/                                    --
+--                                                                                                         --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+
+-- Bryan Tee Ming Jun (Student 2)
+-- 1) Find the presentation room which has the greatest number of bookings
+SELECT TOP 1 rb.room_id, r.room_name, COUNT(*) AS total_bookings
+FROM RoomBooking rb
+JOIN Room r ON rb.room_id = r.room_id
+GROUP BY rb.room_id, r.room_name
+ORDER BY total_bookings DESC;
+/*=========================================================================================================*/
+
+-- 2) Show the person who have never made any loan.
+SELECT u.user_id, u.first_name, u.email
+FROM [User] u
+LEFT JOIN Loan l ON u.user_id = l.user_id
+WHERE l.loan_id IS NULL;
+/*=========================================================================================================*/
+
+-- 3) Find the person who paid the highest total fine.
+SELECT TOP 1 u.user_id, u.first_name, u.email, SUM(l.loan_fine_amount) AS total_fines
+FROM [User] u
+JOIN Loan l ON u.user_id = l.user_id
+GROUP BY u.user_id, u.first_name, u.email
+ORDER BY total_fines DESC;
+
+/*=========================================================================================================*/
+
+-- 4) Create a query which provides, for the loan, 
+--    the total amount of fine from different types of persons 
+--    in the university such as staff and students.
+SELECT 
+    ISNULL(PersonType, 'Total') AS PersonType,
+    SUM(loan_fine_amount) AS total_fine
+FROM (
+    SELECT 
+        u.user_id,
+        CASE 
+            WHEN lib.user_id IS NOT NULL THEN 'Librarian'
+            WHEN lec.user_id IS NOT NULL THEN 'Lecturer'
+            WHEN s.user_id IS NOT NULL THEN 'Student'
+            WHEN sta.user_id IS NOT NULL THEN 'Staff'
+            ELSE 'Unknown'
+        END AS PersonType,
+        l.loan_fine_amount
+    FROM Loan l
+    JOIN [User] u ON l.user_id = u.user_id
+    LEFT JOIN Librarian lib ON u.user_id = lib.user_id
+    LEFT JOIN Lecturer lec ON u.user_id = lec.user_id
+    LEFT JOIN Student s ON u.user_id = s.user_id
+    LEFT JOIN Staff sta ON u.user_id = sta.user_id
+) AS fine_data
+GROUP BY ROLLUP(PersonType);
+/*=========================================================================================================*/
+
+-- 5) Develop one additional query of your own 
+--    which provides information that would be useful 
+--    for the business. 
+SELECT TOP 5 
+    b.isbn,
+    b.book_title,
+    COUNT(r.reservation_id) AS total_reservations
+FROM Reservation r
+JOIN BookCopy bc ON r.BookCopy_ID = bc.BookCopy_ID
+JOIN Book b ON bc.isbn = b.isbn
+GROUP BY b.isbn, b.book_title
+ORDER BY total_reservations DESC;
+/*
+- This query identifies the top 5 most reserved books.
+- Library staff analyze demand trends.
+- Understand which books should be prioritized 
+  for future acquisitions or promotions.
+/*=========================================================================================================*/
+
+
+
+-------------------------------------------------------------------------------------------------------------
+--                ____    ___   _        ___                               ___   _____                     --
+--               / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _   / _ \ |___ /                     --
+--               \___ \ | | | || |     | | | || | | | / _ \| '__|| | | | | | | |  |_ \                     --
+--                ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| | | |_| | ___) |                    --
+--               |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |  \__\_\|____/                     --
+--                                                                |___/                                    --
+-------------------------------------------------------------------------------------------------------------
+/*=========================================================================================================*/
+
+-- Ronald Oh Fu Ming (Student 3)
 -- Q1
 WITH HighestLoanCount AS (
     SELECT l.User_ID, u.first_name, u.last_name, COUNT(*) AS loan_count
@@ -1643,154 +2021,6 @@ SELECT
     loan_count
 FROM MonthlyTrend
 ORDER BY loan_count DESC, book_title, loan_month;
-/*=========================================================================================================*/
-
-
-
--------------------------------------------------------------------------------------------------------------
---                ____    ___   _        ___                                ___   ____                     --
---               / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _    / _ \ |___ \                    --
---               \___ \ | | | || |     | | | || | | | / _ \| '__|| | | |  | | | |  __) |                   --
---                ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| |  | |_| | / __/                    --
---               |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |   \__\_\|_____|                   --
---                                                                |___/                                    --
---                                                                                                         --
--------------------------------------------------------------------------------------------------------------
-/*=========================================================================================================*/
--- Bryan Tee Ming Jun
--- 1) Find the presentation room which has the greatest number of bookings
-SELECT TOP 1 rb.room_id, r.room_name, COUNT(*) AS total_bookings
-FROM RoomBooking rb
-JOIN Room r ON rb.room_id = r.room_id
-GROUP BY rb.room_id, r.room_name
-ORDER BY total_bookings DESC;
-/*=========================================================================================================*/
-
--- 2) Show the person who have never made any loan.
-SELECT u.user_id, u.first_name, u.email
-FROM [User] u
-LEFT JOIN Loan l ON u.user_id = l.user_id
-WHERE l.loan_id IS NULL;
-/*=========================================================================================================*/
-
--- 3) Find the person who paid the highest total fine.
-SELECT TOP 1 u.user_id, u.first_name, u.email, SUM(l.loan_fine_amount) AS total_fines
-FROM [User] u
-JOIN Loan l ON u.user_id = l.user_id
-GROUP BY u.user_id, u.first_name, u.email
-ORDER BY total_fines DESC;
-
-/*=========================================================================================================*/
-
--- 4) Create a query which provides, for the loan, 
---    the total amount of fine from different types of persons 
---    in the university such as staff and students.
-SELECT 
-    ISNULL(PersonType, 'Total') AS PersonType,
-    SUM(loan_fine_amount) AS total_fine
-FROM (
-    SELECT 
-        u.user_id,
-        CASE 
-            WHEN lib.user_id IS NOT NULL THEN 'Librarian'
-            WHEN lec.user_id IS NOT NULL THEN 'Lecturer'
-            WHEN s.user_id IS NOT NULL THEN 'Student'
-            WHEN sta.user_id IS NOT NULL THEN 'Staff'
-            ELSE 'Unknown'
-        END AS PersonType,
-        l.loan_fine_amount
-    FROM Loan l
-    JOIN [User] u ON l.user_id = u.user_id
-    LEFT JOIN Librarian lib ON u.user_id = lib.user_id
-    LEFT JOIN Lecturer lec ON u.user_id = lec.user_id
-    LEFT JOIN Student s ON u.user_id = s.user_id
-    LEFT JOIN Staff sta ON u.user_id = sta.user_id
-) AS fine_data
-GROUP BY ROLLUP(PersonType);
-/*=========================================================================================================*/
-
--- 5) Develop one additional query of your own 
---    which provides information that would be useful 
---    for the business. 
-SELECT TOP 5 
-    b.isbn,
-    b.book_title,
-    COUNT(r.reservation_id) AS total_reservations
-FROM Reservation r
-JOIN BookCopy bc ON r.BookCopy_ID = bc.BookCopy_ID
-JOIN Book b ON bc.isbn = b.isbn
-GROUP BY b.isbn, b.book_title
-ORDER BY total_reservations DESC;
-/*
-- This query identifies the top 5 most reserved books.
-- Library staff analyze demand trends.
-- Understand which books should be prioritized 
-  for future acquisitions or promotions.
-/*=========================================================================================================*/
-
-
-
--------------------------------------------------------------------------------------------------------------
---                ____    ___   _        ___                               ___   _____                     --
---               / ___|  / _ \ | |      / _ \  _   _   ___  _ __  _   _   / _ \ |___ /                     --
---               \___ \ | | | || |     | | | || | | | / _ \| '__|| | | | | | | |  |_ \                     --
---                ___) || |_| || |___  | |_| || |_| ||  __/| |   | |_| | | |_| | ___) |                    --
---               |____/  \__\_\|_____|  \__\_\ \__,_| \___||_|    \__, |  \__\_\|____/                     --
---                                                                |___/                                    --
--------------------------------------------------------------------------------------------------------------
-/*=========================================================================================================*/
-
--- Khoo Jie Cheng
--- Question 1
-SELECT TOP 1 
-    t.tag_name AS Category,
-    COUNT(b.ISBN) AS TotalBooks
-FROM Book b
-JOIN Tag t ON b.Tag_ID = t.Tag_ID
-GROUP BY t.tag_name
-ORDER BY TotalBooks DESC;
-
--- Question 2
-SELECT b.ISBN, b.book_title
-FROM Book b
-LEFT JOIN BookCopy bc ON b.ISBN = bc.ISBN
-LEFT JOIN Loan l ON bc.BookCopy_ID = l.BookCopy_ID
-WHERE l.BookCopy_ID IS NULL;
-
-
--- Question 3
-SELECT u.User_ID, u.first_name, u.last_name, COUNT(*) AS TotalLoans
-FROM Loan l
-JOIN [User] u ON l.User_ID = u.User_ID
-GROUP BY u.User_ID, u.first_name, u.last_name
-HAVING COUNT(*) > 2;
-
--- Question 4
-SELECT 
-    t.tag_name AS Category,
-    g.genre_name AS Genre,
-    COUNT(b.ISBN) AS TotalBooks
-FROM Book b
-JOIN Tag t ON b.Tag_ID = t.Tag_ID
-JOIN Genre g ON b.Genre_ID = g.Genre_ID
-GROUP BY ROLLUP(t.tag_name, g.genre_name);
-
--- Question 5 
-SELECT 
-    u.User_ID,
-    u.first_name,
-    u.last_name,
-    COUNT(*) AS OverdueLoans,
-    SUM(l.loan_fine_amount) AS TotalFine
-FROM Loan l
-JOIN [User] u ON l.User_ID = u.User_ID
-JOIN BookCopy bc ON l.BookCopy_ID = bc.BookCopy_ID
-JOIN Book b ON bc.ISBN = b.ISBN
-JOIN Tag t ON b.Tag_ID = t.Tag_ID
-WHERE 
-    l.return_date IS NOT NULL AND 
-    l.return_date > DATEADD(DAY, t.loan_period, l.loan_created_date)
-GROUP BY u.User_ID, u.first_name, u.last_name;
 /*=========================================================================================================*/
 
 
