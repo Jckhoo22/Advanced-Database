@@ -29,6 +29,7 @@ SELECT * FROM Loan;
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
+
 -- User Access Roles (Librarian) (Ronald)
 CREATE LOGIN Lib WITH PASSWORD = '1'; -- Create Login to Sql Server
 
@@ -128,6 +129,7 @@ GRANT SELECT ON RoomDetails TO lecturer;
  --                                                                                                        --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
+
 CREATE TABLE [User] (
     User_ID VARCHAR(10) PRIMARY KEY,
     first_name VARCHAR(50),
@@ -313,6 +315,7 @@ CREATE TABLE RoomBooking (
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
+
 --Insert Data into Genre Table
 INSERT INTO Genre (Genre_ID, genre_name, genre_description)
 VALUES
@@ -791,6 +794,7 @@ END;
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
+
 -- SP1 -- Invoke Trigger 1 (Ronald)
 GO
 CREATE PROCEDURE SP_Loan_Book
@@ -1034,6 +1038,23 @@ BEGIN
 END;
 GO
 
+UPDATE Loan
+SET return_date = null
+WHERE BookCopy_ID = 'BC00001';
+
+UPDATE BookCopy
+SET availability_status = 'loaned'
+WHERE BookCopy_ID = 'BC00001';
+
+SELECT * FROM Loan WHERE BookCopy_ID = 'BC00001';
+SELECT * FROM BookCopy WHERE BookCopy_ID = 'BC00001';
+
+
+EXEC SP_Return_Book
+@BookCopy_ID = 'BC00001',
+@return_date = '2025-05-10';
+
+
 /*=========================================================================================================*/
 
 -- SP3 -- Invoke Trigger 3 (JC)
@@ -1093,6 +1114,7 @@ END;
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
+
 -- Invoke after SP1 （Ronald)
 GO
 CREATE TRIGGER TRG_Loan_INS_SetCopyToLoaned
@@ -1161,6 +1183,7 @@ GO
 --                                                                                                         --
 -------------------------------------------------------------------------------------------------------------
 /*=========================================================================================================*/
+
 -- 1) Find the presentation room which has the greatest number of bookings
 SELECT TOP 1 rb.room_id, r.room_name, COUNT(*) AS total_bookings
 FROM RoomBooking rb
@@ -1177,6 +1200,17 @@ WHERE l.loan_id IS NULL;
 /*=========================================================================================================*/
 
 -- 3) Find the person who paid the highest total fine.
+SELECT TOP 1 u.user_id, u.first_name, u.email, SUM(l.loan_fine_amount) AS total_fines
+FROM [User] u
+JOIN Loan l ON u.user_id = l.user_id
+GROUP BY u.user_id, u.first_name, u.email
+ORDER BY total_fines DESC;
+
+/*=========================================================================================================*/
+
+-- 4) Create a query which provides, for the loan, 
+--    the total amount of fine from different types of persons 
+--    in the university such as staff and students.
 SELECT 
     ISNULL(PersonType, 'Total') AS PersonType,
     SUM(loan_fine_amount) AS total_fine
