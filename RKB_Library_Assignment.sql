@@ -701,7 +701,12 @@ GRANT SELECT ON BookDescription TO librarian;
 GRANT SELECT ON Author TO librarian;
 GRANT SELECT ON Genre TO librarian;
 
+-- For viewing the room and its information
+GRANT SELECT ON Room to librarian; 
+GRANT SELECT ON RoomDetails to librarian;
 
+-- For allowing the librarian to edit student room booking
+GRANT SELECT, UPDATE ON RoomBooking to librarian;
 /*=========================================================================================================*/
 
 -- Khoo Jie Cheng
@@ -2137,41 +2142,6 @@ ORDER BY
     person_type, 
     borrower_status, 
     full_name;
-
--- Q5 additional sql query (Top 5 Books borrowed per months	from last 6 months)
-WITH TopBooks AS (
-    -- Step 1: Identify the top 5 most borrowed books in the last 6 months
-    SELECT TOP 5 
-        bc.ISBN,
-        b.book_title,
-        COUNT(*) AS total_loans
-    FROM LOAN l
-    JOIN BOOKCOPY bc ON l.BookCopy_ID = bc.BookCopy_ID
-    JOIN BOOK b ON bc.ISBN = b.ISBN
-    WHERE l.loan_created_date >= DATEADD(MONTH, -6, GETDATE())
-    GROUP BY bc.ISBN, b.book_title
-    ORDER BY total_loans DESC
-),
-MonthlyTrend AS (
-    -- Step 2: Get monthly loan counts for the top 5 books
-    SELECT 
-        tb.book_title,
-        FORMAT(l.loan_created_date, 'yyyy-MM') AS loan_month,
-        COUNT(*) AS loan_count
-    FROM LOAN l
-    JOIN BOOKCOPY bc ON l.BookCopy_ID = bc.BookCopy_ID
-    JOIN TopBooks tb ON bc.ISBN = tb.ISBN
-    WHERE l.loan_created_date >= DATEADD(MONTH, -6, GETDATE())
-    GROUP BY tb.book_title, FORMAT(l.loan_created_date, 'yyyy-MM')
-)
--- Step 3: Display the results
-SELECT 
-    book_title,
-    loan_month,
-    loan_count
-FROM MonthlyTrend
-GROUP BY book_title, loan_month
-ORDER BY loan_count DESC;
 
 -- Q5 additional SQL query (Top 5 Books borrowed per months from last 6 months)
 WITH TopBooks AS (
