@@ -1503,6 +1503,131 @@ BEGIN
     END CATCH
 END;
 GO
+
+-- Khoo Jie Cheng
+-- SP4 -- Invoke Trigger 4 with Concurrency Control (Nested SP)	
+CREATE PROCEDURE SP_Book_Room
+    @User_ID VARCHAR(10),
+    @Room_ID VARCHAR(10)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Result INT;
+    DECLARE @BookingTime DATETIME = GETDATE();
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Step 1: Validate room
+        EXEC @Result = SP_Validate_Room_ForBooking @Room_ID;
+        IF @Result = 1
+        BEGIN
+            RAISERROR('Room not found.', 16, 1); ROLLBACK TRANSACTION; RETURN;
+        END
+        IF @Result = 2
+        BEGIN
+            RAISERROR('Room under maintenance.', 16, 1); ROLLBACK TRANSACTION; RETURN;
+        END
+
+        -- Step 2: Check for overlapping booking
+        EXEC @Result = SP_Check_User_Already_Booked @User_ID, @BookingTime;
+        IF @Result = 2
+        BEGIN
+            RAISERROR('User already has an overlapping booking.', 16, 1); ROLLBACK TRANSACTION; RETURN;
+        END
+
+        -- Step 3: Insert booking (ID auto-generated)
+        EXEC @Result = SP_Insert_RoomBooking_Record @User_ID, @Room_ID, @BookingTime;
+        IF @Result != 0
+        BEGIN
+            RAISERROR('Failed to insert room booking.', 16, 1); ROLLBACK TRANSACTION; RETURN;
+        END
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+        DECLARE @ErrMsg NVARCHAR(4000), @ErrSeverity INT;
+        SELECT @ErrMsg = ERROR_MESSAGE(), @ErrSeverity = ERROR_SEVERITY();
+        RAISERROR(@ErrMsg, @ErrSeverity, 1);
+    END CATCH
+END;
+GO
+
+
+CREATE PROCEDURE SP_Validate_Room_ForBooking
+    @Room_ID VARCHAR(10)
+AS
+BEGIN
+    DECLARE @status VARCHAR(20);
+
+    SELECT @status = maintenance_status
+    FROM RoomDetails
+    WHERE Room_ID = @Room_ID;
+
+    IF @status IS NULL
+        RETURN 1; -- Room not found
+    IF @status <> 'available'
+        RETURN 2; -- Room under maintenance
+
+    RETURN 0; -- OK
+END;
+GO
+
+CREATE PROCEDURE SP_Check_User_Already_Booked
+    @User_ID VARCHAR(10),
+    @BookingTime DATETIME
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM RoomBooking rb WITH (HOLDLOCK)
+        WHERE rb.User_ID = @User_ID
+          AND rb.room_booking_created_time < DATEADD(HOUR, 3, @BookingTime)
+          AND rb.end_time > @BookingTime
+    )
+        RETURN 2; -- Conflict
+
+    RETURN 0; -- OK
+END;
+GO
+
+
+CREATE PROCEDURE SP_Insert_RoomBooking_Record
+    @User_ID VARCHAR(10),
+    @Room_ID VARCHAR(10),
+    @BookingTime DATETIME
+AS
+BEGIN
+    DECLARE @LastID VARCHAR(10), @NewNum INT, @NewID VARCHAR(10);
+
+    BEGIN TRY
+        SELECT TOP 1 @LastID = RoomBooking_ID
+        FROM RoomBooking WITH (TABLOCKX, HOLDLOCK)
+        WHERE RoomBooking_ID LIKE 'RB%'
+        ORDER BY RoomBooking_ID DESC;
+
+        SET @NewNum = ISNULL(CAST(SUBSTRING(@LastID, 3, LEN(@LastID) - 2) AS INT), 0) + 1;
+        SET @NewID = 'RB' + RIGHT('0000' + CAST(@NewNum AS VARCHAR), 4);
+
+        IF LEN(@NewID) > 10
+        BEGIN
+            RAISERROR('Generated RoomBooking_ID exceeds length.', 16, 1);
+            RETURN 3;
+        END
+
+        INSERT INTO RoomBooking (RoomBooking_ID, Room_ID, User_ID, room_booking_created_time)
+        VALUES (@NewID, @Room_ID, @User_ID, @BookingTime);
+
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        RETURN 3;
+    END CATCH
+END;
+GO
 /*=========================================================================================================*/
 
 
@@ -1576,6 +1701,20 @@ BEGIN
     JOIN inserted i ON r.reservation_id = i.reservation_id;
 END;
 GO
+
+-- Trigger 4 invoked after SP4
+CREATE TRIGGER TRG_RoomBooking_CalculateEndTime
+ON RoomBooking
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE rb
+    SET rb.end_time = DATEADD(HOUR, 3, i.room_booking_created_time)
+    FROM RoomBooking rb
+    JOIN inserted i ON rb.RoomBooking_ID = i.RoomBooking_ID;
+END;
+	
 /*=========================================================================================================*/
 
 
